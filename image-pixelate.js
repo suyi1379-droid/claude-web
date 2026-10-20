@@ -38,6 +38,8 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
     const dark = css.getPropertyValue("--cl-color-scheme").trim() === "dark";
     return {
       enabled: read("pixelate") === "on",
+      // Background processing defaults on; an explicit "off" disables it.
+      background: read("pixelBackground") !== "off",
       dot: readNumber("pixelDot", DEFAULTS.dot, 2, 12),
       levels: readNumber("pixelLevels", DEFAULTS.levels, 2, 8),
       color: read("pixelColor") === "on",
@@ -55,6 +57,14 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
   const queue = new Set();
   const states = new WeakMap();   // img -> { original, processed }
   const cache = new Map();
+  const backgroundImages = new Map();
+  let backgroundState = null;
+  let backgroundElement = null;
+  let backgroundObserver = null;
+  let backgroundHostObserver = null;
+  let backgroundTimer = 0;
+  let backgroundToken = 0;
+  let backgroundResize = null;
 
   /**
    * Draw an image as a grid of ink dots. `target` is reused for the settings
@@ -214,6 +224,118 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
     image.dataset.cwPixelated = "1";
   }
 
+  function backgroundValue(element) {
+    if (!element) return "";
+    const inline = element.style.backgroundImage;
+    if (inline && inline !== "none") return inline;
+    return win.getComputedStyle(element).backgroundImage || "";
+  }
+
+  function backgroundUrl(value) {
+    const match = value.match(/url\((?:"|')?([^"')]+)(?:"|')?\)/);
+    if (!match) return null;
+    try { return new win.URL(match[1].trim(), doc.baseURI).href; } catch { return null; }
+  }
+
+  function findBackground() {
+    const candidates = [ "bg1", "bg_custom", "bg_animation" ]
+      .map(id => doc.getElementById(id))
+      .filter(Boolean);
+    const next = candidates.find(element => backgroundUrl(backgroundValue(element))) || candidates[0] || null;
+    if (next !== backgroundElement) {
+      backgroundObserver?.disconnect();
+      backgroundObserver = null;
+      backgroundElement = next;
+      if (backgroundElement) {
+        backgroundObserver = new win.MutationObserver(() => scheduleBackground());
+        backgroundObserver.observe(backgroundElement, { attributes: true, attributeFilter: [ "style", "class" ] });
+      }
+    }
+    return backgroundElement;
+  }
+
+  function isProcessedBackground(value) {
+    return Boolean(backgroundState?.processed && value.includes(backgroundState.processed));
+  }
+
+  function restoreBackground() {
+    backgroundToken += 1;
+    const state = backgroundState;
+    backgroundState = null;
+    if (!state?.element?.isConnected) return;
+    const current = state.element.style.backgroundImage || "";
+    // Leave a background the user picked while we were working alone.
+    if (current && !current.includes(state.processed)) return;
+    if (state.originalInline) state.element.style.backgroundImage = state.originalInline;
+    else state.element.style.removeProperty("background-image");
+  }
+
+  function loadBackgroundImage(url) {
+    if (backgroundImages.has(url)) return Promise.resolve(backgroundImages.get(url));
+    return new Promise(resolve => {
+      const image = new win.Image();
+      image.onload = () => {
+        backgroundImages.set(url, image);
+        if (backgroundImages.size > 4) backgroundImages.delete(backgroundImages.keys().next().value);
+        resolve(image);
+      };
+      image.onerror = () => resolve(null);
+      image.src = url;
+    });
+  }
+
+  async function processBackground() {
+    if (destroyed) return;
+    const config = settings();
+    const element = findBackground();
+    if (!element || !config.enabled || !config.background) {
+      restoreBackground();
+      return;
+    }
+
+    const value = backgroundValue(element);
+    if (!value || value === "none" || isProcessedBackground(value)) return;
+    const url = backgroundUrl(value);
+    if (!url || /\.gif(?:$|\?)/i.test(url)) return;
+    // Same URL selected again: the inline value is the original again, so fall
+    // through and re-apply instead of assuming the previous process is current.
+    if (backgroundState) restoreBackground();
+
+    const token = ++backgroundToken;
+    const source = await loadBackgroundImage(url);
+    if (destroyed || token !== backgroundToken || !source?.naturalWidth || !element.isConnected) return;
+    // The user may have selected another background while this one was decoding.
+    if (backgroundUrl(backgroundValue(element)) !== url) return;
+
+    const rect = element.getBoundingClientRect();
+    const displayScale = Math.max(1e-3, Math.max(rect.width / source.naturalWidth, rect.height / source.naturalHeight));
+    // Keep the visible dot size near the selected one even on 2K/4K backgrounds.
+    const dot = Math.max(2, Math.min(32, config.dot / displayScale));
+
+    let output = null;
+    try {
+      output = render(source, source.naturalWidth, source.naturalHeight, { ...config, dot });
+    } catch {
+      output = null;
+    }
+    if (!output || destroyed || token !== backgroundToken) return;
+
+    const dataUrl = output.toDataURL("image/png");
+    const originalInline = element.style.backgroundImage || "";
+    const nextValue = value.replace(/url\((?:"|')?[^"')]+(?:"|')?\)/, `url("${dataUrl}")`);
+    backgroundState = { element, source: url, originalInline, processed: dataUrl };
+    element.style.backgroundImage = nextValue;
+  }
+
+  function scheduleBackground(delay = 120) {
+    if (destroyed) return;
+    win.clearTimeout(backgroundTimer);
+    backgroundTimer = win.setTimeout(() => {
+      backgroundTimer = 0;
+      void processBackground();
+    }, delay);
+  }
+
   function schedule(image) {
     if (destroyed || !isChatImage(image)) return;
     queue.add(image);
@@ -237,7 +359,14 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
     if (destroyed) return;
     cache.clear();
     doc.querySelectorAll("#chat .mes_img").forEach(restore);
-    if (settings().enabled) scan();
+    const config = settings();
+    if (!config.enabled) {
+      restoreBackground();
+      return;
+    }
+    scan();
+    if (config.background) scheduleBackground(0);
+    else restoreBackground();
   }
 
   /** Small sample for the settings panel: a gradient plus two shapes. */
@@ -270,6 +399,21 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
   function start() {
     if (destroyed) return;
     scan();
+    findBackground();
+    if (settings().enabled && settings().background) scheduleBackground(0);
+
+    // Theme / CSS-variable changes can move the background URL without touching #bg1.
+    backgroundHostObserver = new win.MutationObserver(() => scheduleBackground(250));
+    backgroundHostObserver.observe(doc.documentElement, { attributes: true, attributeFilter: [ "class", "style" ] });
+
+    let lastWidth = win.innerWidth;
+    backgroundResize = () => {
+      if (win.innerWidth === lastWidth) return;
+      lastWidth = win.innerWidth;
+      scheduleBackground(300);
+    };
+    win.addEventListener("resize", backgroundResize);
+
     observer = new win.MutationObserver(records => {
       for (const record of records) {
         if (record.type === "attributes" && isChatImage(record.target)) {
@@ -282,6 +426,10 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
           if (node.nodeType !== 1) continue;
           if (isChatImage(node)) schedule(node);
           node.querySelectorAll?.("#chat .mes_img").forEach(schedule);
+          if (node.id === "bg1" || node.id === "bg_custom" || node.id === "bg_animation" || node.querySelector?.("#bg1,#bg_custom,#bg_animation")) {
+            findBackground();
+            scheduleBackground();
+          }
         }
       }
     });
@@ -309,6 +457,18 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
       queue.clear();
       doc.querySelectorAll("#chat .mes_img").forEach(restore);
       cache.clear();
+      restoreBackground();
+      backgroundObserver?.disconnect();
+      backgroundObserver = null;
+      backgroundHostObserver?.disconnect();
+      backgroundHostObserver = null;
+      win.clearTimeout(backgroundTimer);
+      backgroundTimer = 0;
+      if (backgroundResize) {
+        win.removeEventListener("resize", backgroundResize);
+        backgroundResize = null;
+      }
+      backgroundImages.clear();
       if (win.__claudeImagePixelate === api) delete win.__claudeImagePixelate;
     },
   };

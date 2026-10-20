@@ -8,6 +8,11 @@
 >
 > 安装：在 SillyTavern 的「扩展 → Install extension」粘贴 `https://github.com/suyi1379-droid/claude-web`。
 
+## 2.0.155（suyi1379-droid fork）更新
+
+- 图片像素画化新增“同时处理背景图”（默认开启）：当前聊天背景使用同一组网点尺寸、色阶、原色、反转和墨色参数。
+- 切换背景会自动重新处理；关闭“同时处理背景图”或总开关会恢复原背景，`cover` / `fixed` 等背景样式保持不变。
+
 ## 2.0.154（suyi1379-droid fork）更新
 
 - 新增“图片像素画化”：把聊天图片转成半调网点，可调网点尺寸、色阶数量、保留图片原色、反转图片明暗度和墨色；默认墨色跟随日/夜主题。
@@ -326,4 +331,4 @@ SillyTavern/public/scripts/extensions/third-party/claude-web/
 
 ## 版本
 
-当前版本：`2.0.154`（suyi1379-droid fork）
+当前版本：`2.0.155`（suyi1379-droid fork）

@@ -3,10 +3,16 @@
 > **非官方修改版 / Unofficial fork**
 >
 > 本仓库是 [Claude Web 2.0](https://github.com/claudenoshujin/claude-web) 的修改版，原作者 **lulu**（GitHub：[@claudenoshujin](https://github.com/claudenoshujin)）。
-> 本仓库由 **suyi1379-droid** 维护，只加入了聊天样式、字号缩放和聊天宽度滑杆的修复；与原作者的 3.0 无关。
+> 本仓库由 **suyi1379-droid** 维护，加入了聊天样式、字号缩放、聊天宽度滑杆的修复和“图片像素画化”功能；与原作者的 3.0 无关。
 > 原仓库没有附带 LICENSE，版权归原作者所有；本修改版不授予额外许可。详见 [NOTICE.md](NOTICE.md)。
 >
 > 安装：在 SillyTavern 的「扩展 → Install extension」粘贴 `https://github.com/suyi1379-droid/claude-web`。
+
+## 2.0.154（suyi1379-droid fork）更新
+
+- 新增“图片像素画化”：把聊天图片转成半调网点，可调网点尺寸、色阶数量、保留图片原色、反转图片明暗度和墨色；默认墨色跟随日/夜主题。
+- 只处理聊天里的图片，头像、图标和背景不变；关闭开关后恢复原图。
+- 效果灵感来自 Folia 的 HalftoneDots（hex 网点、原色/反相、墨色参数）。
 
 ## 2.0.153（suyi1379-droid fork）更新
 
@@ -320,4 +326,4 @@ SillyTavern/public/scripts/extensions/third-party/claude-web/
 
 ## 版本
 
-当前版本：`2.0.153`（suyi1379-droid fork）
+当前版本：`2.0.154`（suyi1379-droid fork）

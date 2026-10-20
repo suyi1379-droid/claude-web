@@ -1,7 +1,7 @@
-import { installChatTools } from "./chat-tools.js?v=2.0.153";
-import { installIOSKeyboardScroll } from './ios-keyboard-scroll.js?v=2.0.153';
-import { installIOSComposerFocus } from './ios-composer-focus.js?v=2.0.153';
-/* Claude Web public 2.0.153. Allowed runtime transplant; exclusions removed before generation. */
+import { installChatTools } from "./chat-tools.js?v=2.0.154";
+import { installIOSKeyboardScroll } from './ios-keyboard-scroll.js?v=2.0.154';
+import { installIOSComposerFocus } from './ios-composer-focus.js?v=2.0.154';
+/* Claude Web public 2.0.154. Allowed runtime transplant; exclusions removed before generation. */
 (function() {
   try {
     for (const [k, v] of [ [ "mode", "full" ], [ "structure", "rail" ], [ "skin", "classic" ] ]) localStorage.setItem("claude-web:" + k, v);
@@ -16,16 +16,17 @@ import { installIOSComposerFocus } from './ios-composer-focus.js?v=2.0.153';
   } catch {}
 })();
 
-import { tr } from "./official-i18n.js?v=2.0.153";
+import { tr } from "./official-i18n.js?v=2.0.154";
 
-import { installStreamFollow } from "./stream-follow.js?v=2.0.153";
+import { installStreamFollow } from "./stream-follow.js?v=2.0.154";
 
-import { installOfficialLayout } from "./official-layout.js?v=2.0.153";
+import { installOfficialLayout } from "./official-layout.js?v=2.0.154";
 
-import { buildClawdRig } from "./clawd-rig.js?v=2.0.153";
+import { buildClawdRig } from "./clawd-rig.js?v=2.0.154";
 
-import { createClawdPile } from "./clawd-pile.js?v=2.0.153";
-import { installClawdRhythm } from "./clawd-rhythm.js?v=2.0.153";
+import { createClawdPile } from "./clawd-pile.js?v=2.0.154";
+import { installClawdRhythm } from "./clawd-rhythm.js?v=2.0.154";
+import { installImagePixelate } from "./image-pixelate.js?v=2.0.154";
 
 const CLAUDE_EXTENSION_BASE = new URL(".", import.meta.url).href;
 
@@ -376,7 +377,7 @@ const CLAUDE_FEATURES = {
 };
 
 const CLAUDE_KEYBOARD_BUILD = {
-  id: "2.0.153-public-full-" + CLAUDE_THEME_VARIANT + "-" + CLAUDE_LAYOUT + "-ext",
+  id: "2.0.154-public-full-" + CLAUDE_THEME_VARIANT + "-" + CLAUDE_LAYOUT + "-ext",
   mode: "full"
 };
 
@@ -392,7 +393,7 @@ const officialStyle = document.createElement("link");
 
 officialStyle.rel = "stylesheet";
 
-officialStyle.href = new URL("styles/official-layout.css?v=2.0.153", import.meta.url).href;
+officialStyle.href = new URL("styles/official-layout.css?v=2.0.154", import.meta.url).href;
 
 document.documentElement.dataset.claudeEnabled = CLAUDE_ENABLED ? 'on' : 'off';
 if (CLAUDE_ENABLED) document.head.append(officialStyle);
@@ -404,6 +405,10 @@ const startOfficialLayout = () => {
 };
 if (document.readyState === 'complete') window.setTimeout(startOfficialLayout, 0);
 else window.addEventListener('load', startOfficialLayout, { once: true });
+
+// Chat-image halftone. Installed even while the switch is off so the settings
+// panel can enable it without a reload; it only touches #chat .mes_img.
+if (CLAUDE_ENABLED) installImagePixelate({ win: window, doc: document });
 
 console.info("[Claude Web] 扩展形态启动：" + CLAUDE_THEME_VARIANT + " / " + CLAUDE_LAYOUT + "（在酒馆「扩展」面板的 Claude Web 里可切换）");
 
@@ -1192,7 +1197,7 @@ if (CLAUDE_ENABLED) {
       else hostWindow.localStorage.setItem(RESTORE_KEY, record);
       if (hostWindow.localStorage.getItem(RESTORE_KEY) !== record) throw new Error("无法保留主题恢复记录");
       const safetyId = hostWindow.__claudeSafety?.state?.id;
-      const {saveRestoredTheme} = await import(new URL("theme-restore.js?v=2.0.153", CLAUDE_EXTENSION_BASE).href);
+      const {saveRestoredTheme} = await import(new URL("theme-restore.js?v=2.0.154", CLAUDE_EXTENSION_BASE).href);
       await saveRestoredTheme(hostWindow, context, expected);
       if (hostWindow.localStorage.getItem(RESTORE_KEY) !== record || hostWindow.localStorage.getItem("claude-web:enabled") !== "off") throw new Error("恢复状态已改变，请重新确认");
       await hostWindow.__claudeSafety?.confirmRestore(record, safetyId);
@@ -1202,6 +1207,9 @@ if (CLAUDE_ENABLED) {
       });
     }
     function removeRuntimeArtifacts() {
+      try {
+        hostWindow.__claudeImagePixelate?.destroy?.();
+      } catch {}
       try {
         hostWindow.__claudeClawdInteraction?.destroy?.();
       } catch {}
@@ -7480,7 +7488,52 @@ if (CLAUDE_ENABLED) {
   function buildPanel() {
     const wrapper = document.createElement("div");
     wrapper.id = PANEL_ID;
-    wrapper.innerHTML = `\n      <style>\n        /* 主题自己那 2400 多处 !important 会把按钮压成窄条，文字于是竖着排。\n           这里用 id 提高特异性把它抢回来。 */\n        #${PANEL_ID}, #${PANEL_ID} * { box-sizing:border-box; }\n        #${PANEL_ID} .menu_button {\n          display:inline-flex !important;\n          align-items:center !important;\n          justify-content:center !important;\n          width:auto !important;\n          min-width:0 !important;\n          max-width:none !important;\n          flex:0 0 auto !important;\n          white-space:nowrap !important;\n          writing-mode:horizontal-tb !important;\n          padding:5px 12px !important;\n          line-height:1.4 !important;\n        }\n        #${PANEL_ID} select.text_pole {\n          display:block !important;\n          width:100% !important;\n        }\n        #${PANEL_ID} label { display:block; margin-bottom:3px; }\n        #${PANEL_ID} .claude-web-auto-theme {\n          margin:0 0 10px; padding:9px; border:1px solid color-mix(in srgb,currentColor 16%,transparent);\n          border-radius:10px;\n        }\n        #${PANEL_ID} .claude-web-auto-times {\n          display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:7px;\n        }\n        #${PANEL_ID} .claude-web-auto-times input[type="time"] {\n          display:block !important; width:100% !important; min-width:0 !important;\n        }\n        /* 取色器一行两个。酒馆的设置栏很窄，三个一行色块会小到点不准。 */\n        #${PANEL_ID} .claude-web-swatches {\n          display:grid; grid-template-columns:1fr 1fr; gap:5px 8px; margin-top:8px;\n        }\n        #${PANEL_ID} .claude-web-swatch {\n          display:flex !important; align-items:center; gap:6px;\n          margin:0 !important; font-size:0.9em; min-width:0;\n        }\n        /* 酒馆给 input 的通用样式会把颜色块拉成一条细线，这里全量覆盖。 */\n        #${PANEL_ID} .claude-web-swatch input[type="color"] {\n          width:30px !important; height:22px !important;\n          flex:0 0 auto !important; padding:0 !important; border:none !important;\n          background:none !important; cursor:pointer;\n        }\n        #${PANEL_ID} .claude-web-swatch span {\n          overflow:hidden; text-overflow:ellipsis; white-space:nowrap;\n        }\n        #${PANEL_ID} .claude-web-master {\n          display:flex !important; align-items:center; gap:7px;\n          margin:0 !important; padding:10px 11px;\n          border:1px solid color-mix(in srgb,currentColor 16%,transparent);\n          border-radius:10px;\n        }\n        #${PANEL_ID} .claude-web-master input { flex:0 0 auto; }\n        #${PANEL_ID} .claude-web-sections {\n          display:grid; gap:7px; margin-top:10px;\n        }\n        #${PANEL_ID} .claude-web-section {\n          margin:0; border:1px solid color-mix(in srgb,currentColor 14%,transparent);\n          border-radius:10px; overflow:hidden;\n          background:color-mix(in srgb,currentColor 2.5%,transparent);\n        }\n        #${PANEL_ID} .claude-web-section > summary {\n          display:flex; align-items:center; gap:8px;\n          min-height:38px; padding:8px 10px; cursor:pointer; user-select:none;\n          list-style:none; font-weight:600;\n        }\n        #${PANEL_ID} .claude-web-section > summary::-webkit-details-marker { display:none; }\n        #${PANEL_ID} .claude-web-section > summary::after {\n          content:"\\f078"; flex:0 0 auto; margin-left:2px;\n          font-family:"Font Awesome 6 Free","Font Awesome 5 Free" !important;\n          font-weight:900; font-size:.72em; opacity:.55;\n          transition:transform .16s ease;\n        }\n        #${PANEL_ID} .claude-web-section[open] > summary::after { transform:rotate(180deg); }\n        #${PANEL_ID} .claude-web-section-summary {\n          flex:1 1 auto; min-width:0; overflow:hidden;\n          color:inherit; font-size:.84em; font-weight:400; opacity:.62;\n          text-align:right; text-overflow:ellipsis; white-space:nowrap;\n        }\n        #${PANEL_ID} .claude-web-section-body {\n          padding:10px; border-top:1px solid color-mix(in srgb,currentColor 11%,transparent);\n        }\n        #${PANEL_ID} .claude-web-field + .claude-web-field { margin-top:9px; }\n        #${PANEL_ID} .claude-web-check {\n          display:flex !important; align-items:center; gap:7px; margin:0 !important;\n          min-height:28px;\n        }\n        #${PANEL_ID} .claude-web-check + .claude-web-check { margin-top:3px !important; }\n        #${PANEL_ID} .claude-web-suboptions {\n          margin:6px 0 0 22px; padding-left:9px;\n          border-left:2px solid color-mix(in srgb,currentColor 13%,transparent);\n        }\n        #${PANEL_ID} .claude-web-range {\n          display:grid; grid-template-columns:auto minmax(70px,1fr) 3em;\n          align-items:center; gap:8px; margin-top:7px;\n        }\n        #${PANEL_ID} .claude-web-range > span:first-child {\n          font-size:.9em; opacity:.75; white-space:nowrap;\n        }\n        #${PANEL_ID} .claude-web-range > span:last-child {\n          width:3em; font-size:.9em; opacity:.75; text-align:right;\n        }\n        #${PANEL_ID} .claude-web-help {\n          margin-top:5px; font-size:.85em; opacity:.62; line-height:1.5;\n        }\n        #${PANEL_ID} .claude-web-actions {\n          display:flex; gap:6px; flex-wrap:wrap; margin-top:7px;\n        }\n        #${PANEL_ID} [hidden] { display:none !important; }\n      </style>\n      <div class="inline-drawer">\n        <div class="inline-drawer-toggle inline-drawer-header">\n          <b>Claude Web</b>\n          <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>\n        </div>\n        <div class="inline-drawer-content">\n          <label class="checkbox_label claude-web-master">\n            <input id="claude-web-enabled" type="checkbox">\n            <span><b>启用 Claude Web</b></span>\n          </label>\n          <div id="claude-web-enabled-hint"\n               style="margin:6px 2px 0;font-size:0.9em;opacity:.75;line-height:1.5"></div>\n\n          <div class="claude-web-sections">\n            <details class="claude-web-section" id="claude-web-section-appearance" open>\n              <summary>\n                <span>外观</span>\n                <span class="claude-web-section-summary" id="claude-web-summary-appearance"></span>\n              </summary>\n              <div class="claude-web-section-body">\n                <div id="claude-web-full-appearance" class="claude-web-field">\n                <div class="claude-web-field">\n                  <label for="claude-web-preset">Claude 风格预设</label>\n                  <select id="claude-web-preset" class="text_pole"></select>\n                </div>\n\n                <div class="claude-web-field">\n                  <label for="claude-web-ui-style">界面样式</label>\n                  <select id="claude-web-ui-style" class="text_pole"></select>\n                  <div id="claude-web-ui-style-pending" class="claude-web-help" hidden><span></span> <button id="claude-web-ui-style-reload" type="button" class="menu_button"></button></div>\n                </div>\n\n                <div class="claude-web-field claude-web-auto-theme">\n                  <label for="claude-web-theme-auto"><b>主题切换</b></label>\n                  <select id="claude-web-theme-auto" class="text_pole"></select>\n                  <div id="claude-web-auto-times" class="claude-web-auto-times" hidden>\n                    <label>日间开始<input id="claude-web-day-start" type="time" class="text_pole" value="07:00"></label>\n                    <label>夜间开始<input id="claude-web-night-start" type="time" class="text_pole" value="19:00"></label>\n                  </div>\n                  <div id="claude-web-auto-hint" class="claude-web-help"></div>\n                </div>\n\n                <div class="claude-web-field">\n                  <label for="claude-web-variant">当前明暗</label>\n                  <select id="claude-web-variant" class="text_pole"></select>\n                </div>\n\n                <div class="claude-web-field">\n                  <label for="claude-web-font">字体</label>\n                  <select id="claude-web-font" class="text_pole"></select>\n                  <input id="claude-web-font-custom" class="text_pole" style="margin-top:6px;display:none"\n                         placeholder='自定义 font-family，例如："LXGW WenKai", serif'>\n                </div>\n\n                <label class="checkbox_label claude-web-check claude-web-field">\n                  <input id="claude-web-quote-body-color" type="checkbox">\n                  <span>引号内文字变色</span>\n                </label>\n                <div class="claude-web-help">开启时使用主题引号色，关闭时跟随正文颜色。</div>\n\n                <details id="claude-web-colors" class="claude-web-field">\n                  <summary style="cursor:pointer;user-select:none;opacity:.85">自定义配色</summary>\n                  <div id="claude-web-swatches" class="claude-web-swatches"></div>\n                  <div class="claude-web-help">改动存进「我的配色」，日间和夜间各存一套，其余颜色自动推导。</div>\n                </details>\n\n                <div class="claude-web-actions">\n                  <button id="claude-web-export" class="menu_button">导出</button>\n                  <button id="claude-web-import" class="menu_button">导入</button>\n                  <button id="claude-web-reset" class="menu_button">清除自定义</button>\n                </div>\n                <input id="claude-web-import-file" type="file" accept="application/json,.json" style="display:none">\n                <div id="claude-web-preset-hint" class="claude-web-help"></div>\n                </div>\n              </div>\n            </details>\n\n            <details class="claude-web-section" id="claude-web-section-layout">\n              <summary>\n                <span>布局</span>\n                <span class="claude-web-section-summary" id="claude-web-summary-layout"></span>\n              </summary>\n              <div class="claude-web-section-body">\n                <div class="claude-web-field">\n                  <label for="claude-web-layout">设备布局</label>\n                  <select id="claude-web-layout" class="text_pole"></select>\n                </div>\n                <div class="claude-web-field">\n                  <label for="claude-web-recents-size">侧栏「最近」大小</label>\n                  <select id="claude-web-recents-size" class="text_pole">\n                    <option value="s">紧凑</option>\n                    <option value="m">标准</option>\n                    <option value="l">大</option>\n                    <option value="xl">特大</option>\n                  </select>\n                  <div class="claude-web-help">头像、名字和行高一起变，电脑和手机都生效。</div>\n                </div>\n                <label class="checkbox_label claude-web-check claude-web-field">\n                  <input type="checkbox" id="claude-web-avatars">\n                  <span>显示头像</span>\n                </label>\n                <div id="claude-web-hint" class="claude-web-help"></div>\n              </div>\n            </details>\n\n            <details class="claude-web-section" id="claude-web-section-clawd">\n              <summary>\n                <span>Clawd</span>\n                <span class="claude-web-section-summary" id="claude-web-summary-clawd"></span>\n              </summary>\n              <div class="claude-web-section-body">\n                <label class="checkbox_label claude-web-check">\n                  <input type="checkbox" id="claude-web-clawd">\n                  <span>显示 Clawd</span>\n                </label>\n                <div id="claude-web-clawd-options" class="claude-web-suboptions">\n                  <label class="checkbox_label claude-web-check">\n                    <input id="claude-web-motion" type="checkbox">\n                    <span>启用状态动画</span>\n                  </label>\n                  <label class="checkbox_label claude-web-check">\n                    <input id="claude-web-decorations" type="checkbox">\n                    <span>启用粒子与提示气泡</span>\n                  </label>\n                  <label class="checkbox_label claude-web-check">\n                    <input id="claude-web-gen-timer" type="checkbox">\n                    <span>显示生成计时器</span>\n                  </label>\n                </div>\n              </div>\n            </details>\n\n            <details class="claude-web-section" id="claude-web-section-background">\n              <summary>\n                <span>背景</span>\n                <span class="claude-web-section-summary" id="claude-web-summary-background"></span>\n              </summary>\n              <div class="claude-web-section-body">\n                <label class="checkbox_label claude-web-check">\n                  <input id="claude-web-bg-transparent" type="checkbox">\n                  <span>背景透传</span>\n                </label>\n                <div class="claude-web-help">显示酒馆背景，而不是 Claude 的白底或黑底。</div>\n\n                <label class="checkbox_label claude-web-check" style="margin-top:8px !important">\n                  <input id="claude-web-bg-blur" type="checkbox">\n                  <span>背景毛玻璃</span>\n                </label>\n                <div id="claude-web-bg-blur-options" class="claude-web-suboptions">\n                  <div class="claude-web-range">\n                    <span>浓度</span>\n                    <input id="claude-web-bg-blur-opacity" type="range" min="8" max="60" step="1">\n                    <span id="claude-web-bg-blur-opacity-value"></span>\n                  </div>\n                </div>\n\n                <label class="checkbox_label claude-web-check" style="margin-top:10px !important">\n                  <input id="claude-web-bg-image-blur" type="checkbox">\n                  <span>背景图模糊</span>\n                </label>\n                <div id="claude-web-bg-image-options" class="claude-web-suboptions">\n                  <div class="claude-web-range">\n                    <span>模糊半径</span>\n                    <input id="claude-web-bg-image-blur-radius" type="range" min="0" max="32" step="1">\n                    <span id="claude-web-bg-image-blur-radius-value"></span>\n                  </div>\n                  <div class="claude-web-range">\n                    <span>背景压暗</span>\n                    <input id="claude-web-bg-image-dim" type="range" min="0" max="70" step="1">\n                    <span id="claude-web-bg-image-dim-value"></span>\n                  </div>\n                </div>\n              </div>\n            </details>\n\n            <details class="claude-web-section" id="claude-web-section-about">\n              <summary>\n                <span>关于与更新</span>\n                <span class="claude-web-section-summary">版本与维护</span>\n              </summary>\n              <div class="claude-web-section-body">\n                <div class="claude-web-actions" style="margin-top:0">\n                  <button id="claude-web-update" class="menu_button">检查更新</button>\n                  <button id="claude-web-reinstall" class="menu_button">重新安装</button>\n                </div>\n                <div id="claude-web-update-hint" class="claude-web-help"></div>\n                <div id="claude-web-build" class="claude-web-help" style="opacity:.55;word-break:break-all"></div>\n              </div>\n            </details>\n          </div>\n        </div>\n      </div>\n    `;
+    wrapper.innerHTML = `\n      <style>\n        /* 主题自己那 2400 多处 !important 会把按钮压成窄条，文字于是竖着排。\n           这里用 id 提高特异性把它抢回来。 */\n        #${PANEL_ID}, #${PANEL_ID} * { box-sizing:border-box; }\n        #${PANEL_ID} .menu_button {\n          display:inline-flex !important;\n          align-items:center !important;\n          justify-content:center !important;\n          width:auto !important;\n          min-width:0 !important;\n          max-width:none !important;\n          flex:0 0 auto !important;\n          white-space:nowrap !important;\n          writing-mode:horizontal-tb !important;\n          padding:5px 12px !important;\n          line-height:1.4 !important;\n        }\n        #${PANEL_ID} select.text_pole {\n          display:block !important;\n          width:100% !important;\n        }\n        #${PANEL_ID} label { display:block; margin-bottom:3px; }\n        #${PANEL_ID} .claude-web-auto-theme {\n          margin:0 0 10px; padding:9px; border:1px solid color-mix(in srgb,currentColor 16%,transparent);\n          border-radius:10px;\n        }\n        #${PANEL_ID} .claude-web-auto-times {\n          display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:7px;\n        }\n        #${PANEL_ID} .claude-web-auto-times input[type="time"] {\n          display:block !important; width:100% !important; min-width:0 !important;\n        }\n        /* 取色器一行两个。酒馆的设置栏很窄，三个一行色块会小到点不准。 */\n        #${PANEL_ID} .claude-web-swatches {\n          display:grid; grid-template-columns:1fr 1fr; gap:5px 8px; margin-top:8px;\n        }\n        #${PANEL_ID} .claude-web-swatch {\n          display:flex !important; align-items:center; gap:6px;\n          margin:0 !important; font-size:0.9em; min-width:0;\n        }\n        /* 酒馆给 input 的通用样式会把颜色块拉成一条细线，这里全量覆盖。 */\n        #${PANEL_ID} .claude-web-swatch input[type="color"] {\n          width:30px !important; height:22px !important;\n          flex:0 0 auto !important; padding:0 !important; border:none !important;\n          background:none !important; cursor:pointer;\n        }\n        #${PANEL_ID} .claude-web-swatch span {\n          overflow:hidden; text-overflow:ellipsis; white-space:nowrap;\n        }\n        #${PANEL_ID} .claude-web-master {\n          display:flex !important; align-items:center; gap:7px;\n          margin:0 !important; padding:10px 11px;\n          border:1px solid color-mix(in srgb,currentColor 16%,transparent);\n          border-radius:10px;\n        }\n        #${PANEL_ID} .claude-web-master input { flex:0 0 auto; }\n        #${PANEL_ID} .claude-web-sections {\n          display:grid; gap:7px; margin-top:10px;\n        }\n        #${PANEL_ID} .claude-web-section {\n          margin:0; border:1px solid color-mix(in srgb,currentColor 14%,transparent);\n          border-radius:10px; overflow:hidden;\n          background:color-mix(in srgb,currentColor 2.5%,transparent);\n        }\n        #${PANEL_ID} .claude-web-section > summary {\n          display:flex; align-items:center; gap:8px;\n          min-height:38px; padding:8px 10px; cursor:pointer; user-select:none;\n          list-style:none; font-weight:600;\n        }\n        #${PANEL_ID} .claude-web-section > summary::-webkit-details-marker { display:none; }\n        #${PANEL_ID} .claude-web-section > summary::after {\n          content:"\\f078"; flex:0 0 auto; margin-left:2px;\n          font-family:"Font Awesome 6 Free","Font Awesome 5 Free" !important;\n          font-weight:900; font-size:.72em; opacity:.55;\n          transition:transform .16s ease;\n        }\n        #${PANEL_ID} .claude-web-section[open] > summary::after { transform:rotate(180deg); }\n        #${PANEL_ID} .claude-web-section-summary {\n          flex:1 1 auto; min-width:0; overflow:hidden;\n          color:inherit; font-size:.84em; font-weight:400; opacity:.62;\n          text-align:right; text-overflow:ellipsis; white-space:nowrap;\n        }\n        #${PANEL_ID} .claude-web-section-body {\n          padding:10px; border-top:1px solid color-mix(in srgb,currentColor 11%,transparent);\n        }\n        #${PANEL_ID} .claude-web-field + .claude-web-field { margin-top:9px; }\n        #${PANEL_ID} .claude-web-check {\n          display:flex !important; align-items:center; gap:7px; margin:0 !important;\n          min-height:28px;\n        }\n        #${PANEL_ID} .claude-web-check + .claude-web-check { margin-top:3px !important; }\n        #${PANEL_ID} .claude-web-suboptions {\n          margin:6px 0 0 22px; padding-left:9px;\n          border-left:2px solid color-mix(in srgb,currentColor 13%,transparent);\n        }\n        #${PANEL_ID} .claude-web-range {\n          display:grid; grid-template-columns:auto minmax(70px,1fr) 3em;\n          align-items:center; gap:8px; margin-top:7px;\n        }\n        #${PANEL_ID} .claude-web-range > span:first-child {\n          font-size:.9em; opacity:.75; white-space:nowrap;\n        }\n        #${PANEL_ID} .claude-web-range > span:last-child {\n          width:3em; font-size:.9em; opacity:.75; text-align:right;\n        }\n        #${PANEL_ID} .claude-web-help {\n          margin-top:5px; font-size:.85em; opacity:.62; line-height:1.5;\n        }\n        #${PANEL_ID} .claude-web-actions {\n          display:flex; gap:6px; flex-wrap:wrap; margin-top:7px;\n        }\n        #${PANEL_ID} .claude-web-pixel-preview { display:block; width:100%; max-width:360px; height:auto; margin:9px auto 0; border:1px solid color-mix(in srgb,currentColor 14%,transparent); border-radius:10px; background:color-mix(in srgb,currentColor 2.5%,transparent); }
+        #${PANEL_ID} .claude-web-pixel-ink { width:44px !important; height:28px !important; padding:0 !important; border:1px solid color-mix(in srgb,currentColor 18%,transparent) !important; border-radius:7px !important; background:none !important; cursor:pointer; }
+        #${PANEL_ID} .claude-web-pixel-ink-row { display:flex !important; align-items:center; gap:9px; }
+        #${PANEL_ID} .claude-web-pixel-ink-row label { margin:0 !important; flex:0 0 auto; }
+        #${PANEL_ID} .claude-web-pixel-ink-value { margin:0; font-size:.85em; opacity:.62; }
+        #${PANEL_ID} [hidden] { display:none !important; }\n      </style>\n      <div class="inline-drawer">\n        <div class="inline-drawer-toggle inline-drawer-header">\n          <b>Claude Web</b>\n          <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>\n        </div>\n        <div class="inline-drawer-content">\n          <label class="checkbox_label claude-web-master">\n            <input id="claude-web-enabled" type="checkbox">\n            <span><b>启用 Claude Web</b></span>\n          </label>\n          <div id="claude-web-enabled-hint"\n               style="margin:6px 2px 0;font-size:0.9em;opacity:.75;line-height:1.5"></div>\n\n          <div class="claude-web-sections">\n            <details class="claude-web-section" id="claude-web-section-appearance" open>\n              <summary>\n                <span>外观</span>\n                <span class="claude-web-section-summary" id="claude-web-summary-appearance"></span>\n              </summary>\n              <div class="claude-web-section-body">\n                <div id="claude-web-full-appearance" class="claude-web-field">\n                <div class="claude-web-field">\n                  <label for="claude-web-preset">Claude 风格预设</label>\n                  <select id="claude-web-preset" class="text_pole"></select>\n                </div>\n\n                <div class="claude-web-field">\n                  <label for="claude-web-ui-style">界面样式</label>\n                  <select id="claude-web-ui-style" class="text_pole"></select>\n                  <div id="claude-web-ui-style-pending" class="claude-web-help" hidden><span></span> <button id="claude-web-ui-style-reload" type="button" class="menu_button"></button></div>\n                </div>\n\n                <div class="claude-web-field claude-web-auto-theme">\n                  <label for="claude-web-theme-auto"><b>主题切换</b></label>\n                  <select id="claude-web-theme-auto" class="text_pole"></select>\n                  <div id="claude-web-auto-times" class="claude-web-auto-times" hidden>\n                    <label>日间开始<input id="claude-web-day-start" type="time" class="text_pole" value="07:00"></label>\n                    <label>夜间开始<input id="claude-web-night-start" type="time" class="text_pole" value="19:00"></label>\n                  </div>\n                  <div id="claude-web-auto-hint" class="claude-web-help"></div>\n                </div>\n\n                <div class="claude-web-field">\n                  <label for="claude-web-variant">当前明暗</label>\n                  <select id="claude-web-variant" class="text_pole"></select>\n                </div>\n\n                <div class="claude-web-field">\n                  <label for="claude-web-font">字体</label>\n                  <select id="claude-web-font" class="text_pole"></select>\n                  <input id="claude-web-font-custom" class="text_pole" style="margin-top:6px;display:none"\n                         placeholder='自定义 font-family，例如："LXGW WenKai", serif'>\n                </div>\n\n                <label class="checkbox_label claude-web-check claude-web-field">\n                  <input id="claude-web-quote-body-color" type="checkbox">\n                  <span>引号内文字变色</span>\n                </label>\n                <div class="claude-web-help">开启时使用主题引号色，关闭时跟随正文颜色。</div>\n\n                <details id="claude-web-colors" class="claude-web-field">\n                  <summary style="cursor:pointer;user-select:none;opacity:.85">自定义配色</summary>\n                  <div id="claude-web-swatches" class="claude-web-swatches"></div>\n                  <div class="claude-web-help">改动存进「我的配色」，日间和夜间各存一套，其余颜色自动推导。</div>\n                </details>\n\n                <div class="claude-web-actions">\n                  <button id="claude-web-export" class="menu_button">导出</button>\n                  <button id="claude-web-import" class="menu_button">导入</button>\n                  <button id="claude-web-reset" class="menu_button">清除自定义</button>\n                </div>\n                <input id="claude-web-import-file" type="file" accept="application/json,.json" style="display:none">\n                <div id="claude-web-preset-hint" class="claude-web-help"></div>\n                </div>\n              </div>\n            </details>\n\n            <details class="claude-web-section" id="claude-web-section-layout">\n              <summary>\n                <span>布局</span>\n                <span class="claude-web-section-summary" id="claude-web-summary-layout"></span>\n              </summary>\n              <div class="claude-web-section-body">\n                <div class="claude-web-field">\n                  <label for="claude-web-layout">设备布局</label>\n                  <select id="claude-web-layout" class="text_pole"></select>\n                </div>\n                <div class="claude-web-field">\n                  <label for="claude-web-recents-size">侧栏「最近」大小</label>\n                  <select id="claude-web-recents-size" class="text_pole">\n                    <option value="s">紧凑</option>\n                    <option value="m">标准</option>\n                    <option value="l">大</option>\n                    <option value="xl">特大</option>\n                  </select>\n                  <div class="claude-web-help">头像、名字和行高一起变，电脑和手机都生效。</div>\n                </div>\n                <label class="checkbox_label claude-web-check claude-web-field">\n                  <input type="checkbox" id="claude-web-avatars">\n                  <span>显示头像</span>\n                </label>\n                <div id="claude-web-hint" class="claude-web-help"></div>\n              </div>\n            </details>\n\n            <details class="claude-web-section" id="claude-web-section-clawd">\n              <summary>\n                <span>Clawd</span>\n                <span class="claude-web-section-summary" id="claude-web-summary-clawd"></span>\n              </summary>\n              <div class="claude-web-section-body">\n                <label class="checkbox_label claude-web-check">\n                  <input type="checkbox" id="claude-web-clawd">\n                  <span>显示 Clawd</span>\n                </label>\n                <div id="claude-web-clawd-options" class="claude-web-suboptions">\n                  <label class="checkbox_label claude-web-check">\n                    <input id="claude-web-motion" type="checkbox">\n                    <span>启用状态动画</span>\n                  </label>\n                  <label class="checkbox_label claude-web-check">\n                    <input id="claude-web-decorations" type="checkbox">\n                    <span>启用粒子与提示气泡</span>\n                  </label>\n                  <label class="checkbox_label claude-web-check">\n                    <input id="claude-web-gen-timer" type="checkbox">\n                    <span>显示生成计时器</span>\n                  </label>\n                </div>\n              </div>\n            </details>\n\n            <details class="claude-web-section" id="claude-web-section-background">\n              <summary>\n                <span>背景</span>\n                <span class="claude-web-section-summary" id="claude-web-summary-background"></span>\n              </summary>\n              <div class="claude-web-section-body">\n                <label class="checkbox_label claude-web-check">\n                  <input id="claude-web-bg-transparent" type="checkbox">\n                  <span>背景透传</span>\n                </label>\n                <div class="claude-web-help">显示酒馆背景，而不是 Claude 的白底或黑底。</div>\n\n                <label class="checkbox_label claude-web-check" style="margin-top:8px !important">\n                  <input id="claude-web-bg-blur" type="checkbox">\n                  <span>背景毛玻璃</span>\n                </label>\n                <div id="claude-web-bg-blur-options" class="claude-web-suboptions">\n                  <div class="claude-web-range">\n                    <span>浓度</span>\n                    <input id="claude-web-bg-blur-opacity" type="range" min="8" max="60" step="1">\n                    <span id="claude-web-bg-blur-opacity-value"></span>\n                  </div>\n                </div>\n\n                <label class="checkbox_label claude-web-check" style="margin-top:10px !important">\n                  <input id="claude-web-bg-image-blur" type="checkbox">\n                  <span>背景图模糊</span>\n                </label>\n                <div id="claude-web-bg-image-options" class="claude-web-suboptions">\n                  <div class="claude-web-range">\n                    <span>模糊半径</span>\n                    <input id="claude-web-bg-image-blur-radius" type="range" min="0" max="32" step="1">\n                    <span id="claude-web-bg-image-blur-radius-value"></span>\n                  </div>\n                  <div class="claude-web-range">\n                    <span>背景压暗</span>\n                    <input id="claude-web-bg-image-dim" type="range" min="0" max="70" step="1">\n                    <span id="claude-web-bg-image-dim-value"></span>\n                  </div>\n                </div>\n              </div>\n            </details>\n\n            <details class="claude-web-section" id="claude-web-section-image">
+              <summary>
+                <span>图片</span>
+                <span class="claude-web-section-summary" id="claude-web-summary-image"></span>
+              </summary>
+              <div class="claude-web-section-body">
+                <label class="checkbox_label claude-web-check">
+                  <input id="claude-web-pixelate" type="checkbox">
+                  <span>图片像素画化</span>
+                </label>
+                <div class="claude-web-help">把聊天图片转成半调网点。只处理聊天里的图片，头像、图标和背景不变。</div>
+                <div id="claude-web-pixel-options" class="claude-web-suboptions">
+                  <div class="claude-web-range">
+                    <span>网点尺寸</span>
+                    <input id="claude-web-pixel-dot" type="range" min="2" max="12" step="1">
+                    <span id="claude-web-pixel-dot-value"></span>
+                  </div>
+                  <div class="claude-web-range">
+                    <span>色阶数量</span>
+                    <input id="claude-web-pixel-levels" type="range" min="2" max="8" step="1">
+                    <span id="claude-web-pixel-levels-value"></span>
+                  </div>
+                  <label class="checkbox_label claude-web-check">
+                    <input id="claude-web-pixel-color" type="checkbox">
+                    <span>保留图片原色</span>
+                  </label>
+                  <label class="checkbox_label claude-web-check">
+                    <input id="claude-web-pixel-invert" type="checkbox">
+                    <span>反转图片明暗度</span>
+                  </label>
+                  <div class="claude-web-field claude-web-pixel-ink-row">
+                    <label for="claude-web-pixel-ink">墨色</label>
+                    <input id="claude-web-pixel-ink" class="claude-web-pixel-ink" type="color" value="#1f1f1e">
+                    <span id="claude-web-pixel-ink-value" class="claude-web-pixel-ink-value"></span>
+                  </div>
+                  <canvas id="claude-web-pixel-preview" class="claude-web-pixel-preview" width="240" height="120"></canvas>
+                </div>
+              </div>
+            </details>
+
+            <details class="claude-web-section" id="claude-web-section-about">\n              <summary>\n                <span>关于与更新</span>\n                <span class="claude-web-section-summary">版本与维护</span>\n              </summary>\n              <div class="claude-web-section-body">\n                <div class="claude-web-actions" style="margin-top:0">\n                  <button id="claude-web-update" class="menu_button">检查更新</button>\n                  <button id="claude-web-reinstall" class="menu_button">重新安装</button>\n                </div>\n                <div id="claude-web-update-hint" class="claude-web-help"></div>\n                <div id="claude-web-build" class="claude-web-help" style="opacity:.55;word-break:break-all"></div>\n              </div>\n            </details>\n          </div>\n        </div>\n      </div>\n    `;
     return wrapper;
   }
   const REPO_URL = "https://github.com/suyi1379-droid/claude-web";
@@ -8039,11 +8092,75 @@ if (CLAUDE_ENABLED) {
     bgImageDim.addEventListener("input", () => {
       write("bgImageDim", String(applyBgImageDim(Number(bgImageDim.value))));
     });
+    const pixelBox = panel.querySelector("#claude-web-pixelate");
+    const pixelOptions = panel.querySelector("#claude-web-pixel-options");
+    const pixelDot = panel.querySelector("#claude-web-pixel-dot");
+    const pixelDotValue = panel.querySelector("#claude-web-pixel-dot-value");
+    const pixelLevels = panel.querySelector("#claude-web-pixel-levels");
+    const pixelLevelsValue = panel.querySelector("#claude-web-pixel-levels-value");
+    const pixelColor = panel.querySelector("#claude-web-pixel-color");
+    const pixelInvert = panel.querySelector("#claude-web-pixel-invert");
+    const pixelInk = panel.querySelector("#claude-web-pixel-ink");
+    const pixelInkValue = panel.querySelector("#claude-web-pixel-ink-value");
+    const pixelPreview = panel.querySelector("#claude-web-pixel-preview");
+    const readPixelInk = () => {
+      try {
+        const value = window.localStorage.getItem("claude-web:pixelInk");
+        return /^#[0-9a-f]{6}$/i.test(value || "") ? value : "";
+      } catch {
+        return "";
+      }
+    };
+    const readPixelNumber = (key, fallback, min, max) => {
+      try {
+        const raw = window.localStorage.getItem("claude-web:" + key);
+        if (raw == null || raw === "") return fallback;
+        const value = Number(raw);
+        return Number.isFinite(value) ? Math.min(max, Math.max(min, Math.round(value))) : fallback;
+      } catch {
+        return fallback;
+      }
+    };
+    const themeInk = getComputedStyle(document.documentElement).getPropertyValue("--cl-ink").trim();
+    pixelBox.checked = read("pixelate", [ "on", "off" ], "off") === "on";
+    pixelDot.value = String(readPixelNumber("pixelDot", 4, 2, 12));
+    pixelLevels.value = String(readPixelNumber("pixelLevels", 4, 2, 8));
+    pixelColor.checked = read("pixelColor", [ "on", "off" ], "off") === "on";
+    pixelInvert.checked = read("pixelInvert", [ "on", "off" ], "off") === "on";
+    pixelInk.value = readPixelInk() || (/^#[0-9a-f]{6}$/i.test(themeInk) ? themeInk : "#1f1f1e");
+    let pixelRefreshTimer = 0;
+    const syncPixelLabels = () => {
+      pixelDotValue.textContent = pixelDot.value;
+      pixelLevelsValue.textContent = pixelLevels.value + " 阶";
+      pixelInkValue.textContent = pixelInk.value;
+      pixelOptions.hidden = !pixelBox.checked;
+    };
+    const applyPixel = (writeInk = false) => {
+      write("pixelate", pixelBox.checked ? "on" : "off");
+      write("pixelDot", String(pixelDot.value));
+      write("pixelLevels", String(pixelLevels.value));
+      write("pixelColor", pixelColor.checked ? "on" : "off");
+      write("pixelInvert", pixelInvert.checked ? "on" : "off");
+      // Until the user picks a colour, leave pixelInk empty so the ink keeps
+      // following the day/night theme.
+      if (writeInk) write("pixelInk", pixelInk.value);
+      syncPixelLabels();
+      syncPanelPresentationRef();
+      window.__claudeImagePixelate?.preview(pixelPreview);
+      window.clearTimeout(pixelRefreshTimer);
+      pixelRefreshTimer = window.setTimeout(() => window.__claudeImagePixelate?.refresh(), 180);
+    };
+    pixelBox.addEventListener("change", () => applyPixel());
+    for (const control of [ pixelDot, pixelLevels, pixelColor, pixelInvert ]) control.addEventListener("input", () => applyPixel());
+    pixelInk.addEventListener("input", () => applyPixel(true));
+    syncPixelLabels();
+    window.__claudeImagePixelate?.preview(pixelPreview);
     const selectedLabel = select => select?.selectedOptions?.[0]?.textContent?.trim() || "";
     const appearanceSummary = panel.querySelector("#claude-web-summary-appearance");
     const layoutSummary = panel.querySelector("#claude-web-summary-layout");
     const clawdSummary = panel.querySelector("#claude-web-summary-clawd");
     const backgroundSummary = panel.querySelector("#claude-web-summary-background");
+    const pixelSummary = panel.querySelector("#claude-web-summary-image");
     const fullAppearance = panel.querySelector("#claude-web-full-appearance");
     const layoutSection = panel.querySelector("#claude-web-section-layout");
     const backgroundSection = panel.querySelector("#claude-web-section-background");
@@ -8062,9 +8179,11 @@ if (CLAUDE_ENABLED) {
       bgBlurBox.checked && backgroundStates.push("毛玻璃");
       bgImageBlurBox.checked && backgroundStates.push("背景图模糊");
       backgroundSummary.textContent = backgroundStates.length ? backgroundStates.join(" + ") : "关闭";
+      pixelSummary.textContent = pixelBox.checked ? pixelDot.value + "px / " + pixelLevels.value + " 阶" : "关闭";
       clawdOptions.hidden = !clawdBox.checked;
       bgBlurOptions.hidden = !bgBlurBox.checked;
       bgImageOptions.hidden = !bgImageBlurBox.checked;
+      pixelOptions.hidden = !pixelBox.checked;
       variantSelect.closest(".claude-web-field");
       fullAppearance.hidden = !1;
       for (const child of fullAppearance.children) child.hidden = !1;

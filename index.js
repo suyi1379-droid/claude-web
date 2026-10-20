@@ -1,7 +1,7 @@
-import { installChatTools } from "./chat-tools.js?v=2.0.156";
-import { installIOSKeyboardScroll } from './ios-keyboard-scroll.js?v=2.0.156';
-import { installIOSComposerFocus } from './ios-composer-focus.js?v=2.0.156';
-/* Claude Web public 2.0.156. Allowed runtime transplant; exclusions removed before generation. */
+import { installChatTools } from "./chat-tools.js?v=2.0.157";
+import { installIOSKeyboardScroll } from './ios-keyboard-scroll.js?v=2.0.157';
+import { installIOSComposerFocus } from './ios-composer-focus.js?v=2.0.157';
+/* Claude Web public 2.0.157. Allowed runtime transplant; exclusions removed before generation. */
 (function() {
   try {
     for (const [k, v] of [ [ "mode", "full" ], [ "structure", "rail" ], [ "skin", "classic" ] ]) localStorage.setItem("claude-web:" + k, v);
@@ -16,17 +16,17 @@ import { installIOSComposerFocus } from './ios-composer-focus.js?v=2.0.156';
   } catch {}
 })();
 
-import { tr } from "./official-i18n.js?v=2.0.156";
+import { tr } from "./official-i18n.js?v=2.0.157";
 
-import { installStreamFollow } from "./stream-follow.js?v=2.0.156";
+import { installStreamFollow } from "./stream-follow.js?v=2.0.157";
 
-import { installOfficialLayout } from "./official-layout.js?v=2.0.156";
+import { installOfficialLayout } from "./official-layout.js?v=2.0.157";
 
-import { buildClawdRig } from "./clawd-rig.js?v=2.0.156";
+import { buildClawdRig } from "./clawd-rig.js?v=2.0.157";
 
-import { createClawdPile } from "./clawd-pile.js?v=2.0.156";
-import { installClawdRhythm } from "./clawd-rhythm.js?v=2.0.156";
-import { installImagePixelate } from "./image-pixelate.js?v=2.0.156";
+import { createClawdPile } from "./clawd-pile.js?v=2.0.157";
+import { installClawdRhythm } from "./clawd-rhythm.js?v=2.0.157";
+import { installImagePixelate } from "./image-pixelate.js?v=2.0.157";
 
 const CLAUDE_EXTENSION_BASE = new URL(".", import.meta.url).href;
 
@@ -377,7 +377,7 @@ const CLAUDE_FEATURES = {
 };
 
 const CLAUDE_KEYBOARD_BUILD = {
-  id: "2.0.156-public-full-" + CLAUDE_THEME_VARIANT + "-" + CLAUDE_LAYOUT + "-ext",
+  id: "2.0.157-public-full-" + CLAUDE_THEME_VARIANT + "-" + CLAUDE_LAYOUT + "-ext",
   mode: "full"
 };
 
@@ -393,7 +393,7 @@ const officialStyle = document.createElement("link");
 
 officialStyle.rel = "stylesheet";
 
-officialStyle.href = new URL("styles/official-layout.css?v=2.0.156", import.meta.url).href;
+officialStyle.href = new URL("styles/official-layout.css?v=2.0.157", import.meta.url).href;
 
 document.documentElement.dataset.claudeEnabled = CLAUDE_ENABLED ? 'on' : 'off';
 if (CLAUDE_ENABLED) document.head.append(officialStyle);
@@ -1197,7 +1197,7 @@ if (CLAUDE_ENABLED) {
       else hostWindow.localStorage.setItem(RESTORE_KEY, record);
       if (hostWindow.localStorage.getItem(RESTORE_KEY) !== record) throw new Error("无法保留主题恢复记录");
       const safetyId = hostWindow.__claudeSafety?.state?.id;
-      const {saveRestoredTheme} = await import(new URL("theme-restore.js?v=2.0.156", CLAUDE_EXTENSION_BASE).href);
+      const {saveRestoredTheme} = await import(new URL("theme-restore.js?v=2.0.157", CLAUDE_EXTENSION_BASE).href);
       await saveRestoredTheme(hostWindow, context, expected);
       if (hostWindow.localStorage.getItem(RESTORE_KEY) !== record || hostWindow.localStorage.getItem("claude-web:enabled") !== "off") throw new Error("恢复状态已改变，请重新确认");
       await hostWindow.__claudeSafety?.confirmRestore(record, safetyId);
@@ -7519,6 +7519,12 @@ if (CLAUDE_ENABLED) {
                     <input id="claude-web-pixel-levels" type="range" min="2" max="32" step="1">
                     <span id="claude-web-pixel-levels-value"></span>
                   </div>
+                  <div class="claude-web-range">
+                    <span>明暗度</span>
+                    <input id="claude-web-pixel-brightness" type="range" min="-100" max="100" step="1">
+                    <span id="claude-web-pixel-brightness-value"></span>
+                  </div>
+                  <div class="claude-web-help">负值压暗，正值提亮；用于修正像素化后过亮或过暗的图片。</div>
                   <label class="checkbox_label claude-web-check">
                     <input id="claude-web-pixel-color" type="checkbox">
                     <span>保留图片原色</span>
@@ -8102,6 +8108,8 @@ if (CLAUDE_ENABLED) {
     const pixelDotValue = panel.querySelector("#claude-web-pixel-dot-value");
     const pixelLevels = panel.querySelector("#claude-web-pixel-levels");
     const pixelLevelsValue = panel.querySelector("#claude-web-pixel-levels-value");
+    const pixelBrightness = panel.querySelector("#claude-web-pixel-brightness");
+    const pixelBrightnessValue = panel.querySelector("#claude-web-pixel-brightness-value");
     const pixelColor = panel.querySelector("#claude-web-pixel-color");
     const pixelInvert = panel.querySelector("#claude-web-pixel-invert");
     const pixelBackground = panel.querySelector("#claude-web-pixel-background");
@@ -8130,6 +8138,7 @@ if (CLAUDE_ENABLED) {
     pixelBox.checked = read("pixelate", [ "on", "off" ], "off") === "on";
     pixelDot.value = String(readPixelNumber("pixelDot", 4, 1, 16));
     pixelLevels.value = String(readPixelNumber("pixelLevels", 8, 2, 32));
+    pixelBrightness.value = String(readPixelNumber("pixelBrightness", 0, -100, 100));
     pixelColor.checked = read("pixelColor", [ "on", "off" ], "off") === "on";
     pixelInvert.checked = read("pixelInvert", [ "on", "off" ], "off") === "on";
     pixelBackground.checked = read("pixelBackground", [ "on", "off" ], "on") !== "off";
@@ -8138,6 +8147,7 @@ if (CLAUDE_ENABLED) {
     const syncPixelLabels = () => {
       pixelDotValue.textContent = pixelDot.value;
       pixelLevelsValue.textContent = pixelLevels.value + " 阶";
+      pixelBrightnessValue.textContent = (Number(pixelBrightness.value) > 0 ? "+" : "") + pixelBrightness.value;
       pixelInkValue.textContent = pixelInk.value;
       pixelOptions.hidden = !pixelBox.checked;
     };
@@ -8145,6 +8155,7 @@ if (CLAUDE_ENABLED) {
       write("pixelate", pixelBox.checked ? "on" : "off");
       write("pixelDot", String(pixelDot.value));
       write("pixelLevels", String(pixelLevels.value));
+      write("pixelBrightness", String(pixelBrightness.value));
       write("pixelColor", pixelColor.checked ? "on" : "off");
       write("pixelInvert", pixelInvert.checked ? "on" : "off");
       write("pixelBackground", pixelBackground.checked ? "on" : "off");
@@ -8158,7 +8169,7 @@ if (CLAUDE_ENABLED) {
       pixelRefreshTimer = window.setTimeout(() => window.__claudeImagePixelate?.refresh(), 180);
     };
     pixelBox.addEventListener("change", () => applyPixel());
-    for (const control of [ pixelDot, pixelLevels ]) control.addEventListener("input", () => applyPixel());
+    for (const control of [ pixelDot, pixelLevels, pixelBrightness ]) control.addEventListener("input", () => applyPixel());
     for (const control of [ pixelColor, pixelInvert, pixelBackground ]) control.addEventListener("change", () => applyPixel());
     pixelInk.addEventListener("input", () => applyPixel(true));
     syncPixelLabels();
@@ -8187,7 +8198,9 @@ if (CLAUDE_ENABLED) {
       bgBlurBox.checked && backgroundStates.push("毛玻璃");
       bgImageBlurBox.checked && backgroundStates.push("背景图模糊");
       backgroundSummary.textContent = backgroundStates.length ? backgroundStates.join(" + ") : "关闭";
-      pixelSummary.textContent = pixelBox.checked ? pixelDot.value + "px / " + pixelLevels.value + " 阶" + (pixelBackground.checked ? " / 背景" : "") : "关闭";
+      const brightness = Number(pixelBrightness.value);
+      const brightnessLabel = brightness ? " / 明暗" + (brightness > 0 ? "+" : "") + brightness : "";
+      pixelSummary.textContent = pixelBox.checked ? pixelDot.value + "px / " + pixelLevels.value + " 阶" + brightnessLabel + (pixelBackground.checked ? " / 背景" : "") : "关闭";
       clawdOptions.hidden = !clawdBox.checked;
       bgBlurOptions.hidden = !bgBlurBox.checked;
       bgImageOptions.hidden = !bgImageBlurBox.checked;

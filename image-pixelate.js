@@ -47,6 +47,7 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
       levels: readNumber("pixelLevels", DEFAULTS.levels, 2, 32),
       color: read("pixelColor") === "on",
       invert: read("pixelInvert") === "on",
+      brightness: readNumber("pixelBrightness", 0, -100, 100),
       ink: currentInk(),
       // Like Folia's colorBack: light paper gets dark ink, dark paper gets light ink.
       paper: css.getPropertyValue("--cw-surface-page").trim() || (dark ? "#1f1f1e" : "#fbfbfa"),
@@ -143,6 +144,12 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
         // Ink amount is theme-aware: dark ink on light paper, light ink on dark paper.
         let amount = config.dark ? luminance : 1 - luminance;
         if (config.invert) amount = 1 - amount;
+        if (config.brightness) {
+          // Positive brightens the final print: less ink on light paper, more
+          // light ink on dark paper. Negative does the opposite.
+          amount += (config.dark ? config.brightness : -config.brightness) / 200;
+          amount = Math.min(1, Math.max(0, amount));
+        }
         if (levels < 12) {
           // Ordered dither: keeps more of the source gradient at 2-8 levels.
           const dither = (BAYER[row & 3][column & 3] + 0.5) / 16;
@@ -165,7 +172,7 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
   }
 
   function keyFor(source, config) {
-    return [source, config.dot, config.levels, config.color ? 1 : 0, config.invert ? 1 : 0, config.ink, config.paper, config.dark ? 1 : 0].join("|");
+    return [source, config.dot, config.levels, config.color ? 1 : 0, config.invert ? 1 : 0, config.brightness, config.ink, config.paper, config.dark ? 1 : 0].join("|");
   }
 
   function isChatImage(node) {

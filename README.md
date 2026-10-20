@@ -8,6 +8,11 @@
 >
 > 安装：在 SillyTavern 的「扩展 → Install extension」粘贴 `https://github.com/suyi1379-droid/claude-web`。
 
+## 2.0.156（suyi1379-droid fork）更新
+
+- 图片像素画化提升精细度：输出上限 1400→2560px，网点尺寸 1–16px（原 2–12），色阶 2–32 阶（原 2–8），默认改为 4px / 8 阶。
+- 2–11 阶时加入 4×4 Bayer 抖动，减少渐变断层；更高色阶保持纯网点。复杂背景的细节和明暗过渡更完整。
+
 ## 2.0.155（suyi1379-droid fork）更新
 
 - 图片像素画化新增“同时处理背景图”（默认开启）：当前聊天背景使用同一组网点尺寸、色阶、原色、反转和墨色参数。
@@ -331,4 +336,4 @@ SillyTavern/public/scripts/extensions/third-party/claude-web/
 
 ## 版本
 
-当前版本：`2.0.155`（suyi1379-droid fork）
+当前版本：`2.0.156`（suyi1379-droid fork）

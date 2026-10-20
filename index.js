@@ -1,7 +1,7 @@
-import { installChatTools } from "./chat-tools.js?v=2.0.155";
-import { installIOSKeyboardScroll } from './ios-keyboard-scroll.js?v=2.0.155';
-import { installIOSComposerFocus } from './ios-composer-focus.js?v=2.0.155';
-/* Claude Web public 2.0.155. Allowed runtime transplant; exclusions removed before generation. */
+import { installChatTools } from "./chat-tools.js?v=2.0.156";
+import { installIOSKeyboardScroll } from './ios-keyboard-scroll.js?v=2.0.156';
+import { installIOSComposerFocus } from './ios-composer-focus.js?v=2.0.156';
+/* Claude Web public 2.0.156. Allowed runtime transplant; exclusions removed before generation. */
 (function() {
   try {
     for (const [k, v] of [ [ "mode", "full" ], [ "structure", "rail" ], [ "skin", "classic" ] ]) localStorage.setItem("claude-web:" + k, v);
@@ -16,17 +16,17 @@ import { installIOSComposerFocus } from './ios-composer-focus.js?v=2.0.155';
   } catch {}
 })();
 
-import { tr } from "./official-i18n.js?v=2.0.155";
+import { tr } from "./official-i18n.js?v=2.0.156";
 
-import { installStreamFollow } from "./stream-follow.js?v=2.0.155";
+import { installStreamFollow } from "./stream-follow.js?v=2.0.156";
 
-import { installOfficialLayout } from "./official-layout.js?v=2.0.155";
+import { installOfficialLayout } from "./official-layout.js?v=2.0.156";
 
-import { buildClawdRig } from "./clawd-rig.js?v=2.0.155";
+import { buildClawdRig } from "./clawd-rig.js?v=2.0.156";
 
-import { createClawdPile } from "./clawd-pile.js?v=2.0.155";
-import { installClawdRhythm } from "./clawd-rhythm.js?v=2.0.155";
-import { installImagePixelate } from "./image-pixelate.js?v=2.0.155";
+import { createClawdPile } from "./clawd-pile.js?v=2.0.156";
+import { installClawdRhythm } from "./clawd-rhythm.js?v=2.0.156";
+import { installImagePixelate } from "./image-pixelate.js?v=2.0.156";
 
 const CLAUDE_EXTENSION_BASE = new URL(".", import.meta.url).href;
 
@@ -377,7 +377,7 @@ const CLAUDE_FEATURES = {
 };
 
 const CLAUDE_KEYBOARD_BUILD = {
-  id: "2.0.155-public-full-" + CLAUDE_THEME_VARIANT + "-" + CLAUDE_LAYOUT + "-ext",
+  id: "2.0.156-public-full-" + CLAUDE_THEME_VARIANT + "-" + CLAUDE_LAYOUT + "-ext",
   mode: "full"
 };
 
@@ -393,7 +393,7 @@ const officialStyle = document.createElement("link");
 
 officialStyle.rel = "stylesheet";
 
-officialStyle.href = new URL("styles/official-layout.css?v=2.0.155", import.meta.url).href;
+officialStyle.href = new URL("styles/official-layout.css?v=2.0.156", import.meta.url).href;
 
 document.documentElement.dataset.claudeEnabled = CLAUDE_ENABLED ? 'on' : 'off';
 if (CLAUDE_ENABLED) document.head.append(officialStyle);
@@ -1197,7 +1197,7 @@ if (CLAUDE_ENABLED) {
       else hostWindow.localStorage.setItem(RESTORE_KEY, record);
       if (hostWindow.localStorage.getItem(RESTORE_KEY) !== record) throw new Error("无法保留主题恢复记录");
       const safetyId = hostWindow.__claudeSafety?.state?.id;
-      const {saveRestoredTheme} = await import(new URL("theme-restore.js?v=2.0.155", CLAUDE_EXTENSION_BASE).href);
+      const {saveRestoredTheme} = await import(new URL("theme-restore.js?v=2.0.156", CLAUDE_EXTENSION_BASE).href);
       await saveRestoredTheme(hostWindow, context, expected);
       if (hostWindow.localStorage.getItem(RESTORE_KEY) !== record || hostWindow.localStorage.getItem("claude-web:enabled") !== "off") throw new Error("恢复状态已改变，请重新确认");
       await hostWindow.__claudeSafety?.confirmRestore(record, safetyId);
@@ -7503,7 +7503,7 @@ if (CLAUDE_ENABLED) {
                   <input id="claude-web-pixelate" type="checkbox">
                   <span>图片像素画化</span>
                 </label>
-                <div class="claude-web-help">把聊天图片转成半调网点；打开“同时处理背景图”时，当前背景也会套用同一组参数。头像、图标和扩展 UI 不变。</div>
+                <div class="claude-web-help">网点尺寸 1–16px，色阶 2–32 阶；复杂背景可用更小的网点和更高的色阶获得更细的明暗过渡。打开“同时处理背景图”时，当前背景也套用同一组参数。</div>
                 <div id="claude-web-pixel-options" class="claude-web-suboptions">
                   <label class="checkbox_label claude-web-check">
                     <input id="claude-web-pixel-background" type="checkbox">
@@ -7511,12 +7511,12 @@ if (CLAUDE_ENABLED) {
                   </label>
                   <div class="claude-web-range">
                     <span>网点尺寸</span>
-                    <input id="claude-web-pixel-dot" type="range" min="2" max="12" step="1">
+                    <input id="claude-web-pixel-dot" type="range" min="1" max="16" step="1">
                     <span id="claude-web-pixel-dot-value"></span>
                   </div>
                   <div class="claude-web-range">
                     <span>色阶数量</span>
-                    <input id="claude-web-pixel-levels" type="range" min="2" max="8" step="1">
+                    <input id="claude-web-pixel-levels" type="range" min="2" max="32" step="1">
                     <span id="claude-web-pixel-levels-value"></span>
                   </div>
                   <label class="checkbox_label claude-web-check">
@@ -8128,8 +8128,8 @@ if (CLAUDE_ENABLED) {
     };
     const themeInk = getComputedStyle(document.documentElement).getPropertyValue("--cl-ink").trim();
     pixelBox.checked = read("pixelate", [ "on", "off" ], "off") === "on";
-    pixelDot.value = String(readPixelNumber("pixelDot", 4, 2, 12));
-    pixelLevels.value = String(readPixelNumber("pixelLevels", 4, 2, 8));
+    pixelDot.value = String(readPixelNumber("pixelDot", 4, 1, 16));
+    pixelLevels.value = String(readPixelNumber("pixelLevels", 8, 2, 32));
     pixelColor.checked = read("pixelColor", [ "on", "off" ], "off") === "on";
     pixelInvert.checked = read("pixelInvert", [ "on", "off" ], "off") === "on";
     pixelBackground.checked = read("pixelBackground", [ "on", "off" ], "on") !== "off";

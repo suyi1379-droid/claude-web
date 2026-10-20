@@ -7,9 +7,12 @@
    are deliberately left alone. The original src is kept per image and restored
    when the effect is switched off or the extension is destroyed. */
 
-const DEFAULTS = Object.freeze({ dot: 4, levels: 4, ink: "#1f1f1e" });
-const MAX_SIDE = 1400;
-const CACHE_LIMIT = 8;
+const DEFAULTS = Object.freeze({ dot: 4, levels: 8, ink: "#1f1f1e" });
+const MAX_SIDE = 2560;
+const CACHE_LIMIT = 6;
+// 4x4 Bayer matrix: breaks up banding at low level counts without changing the
+// selected number of tones. Disabled once the level count is already fine.
+const BAYER = [ [ 0, 8, 2, 10 ], [ 12, 4, 14, 6 ], [ 3, 11, 1, 9 ], [ 15, 7, 13, 5 ] ];
 
 export function installImagePixelate({ win = window, doc = document } = {}) {
   if (win.__claudeImagePixelate) return win.__claudeImagePixelate;
@@ -40,8 +43,8 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
       enabled: read("pixelate") === "on",
       // Background processing defaults on; an explicit "off" disables it.
       background: read("pixelBackground") !== "off",
-      dot: readNumber("pixelDot", DEFAULTS.dot, 2, 12),
-      levels: readNumber("pixelLevels", DEFAULTS.levels, 2, 8),
+      dot: readNumber("pixelDot", DEFAULTS.dot, 1, 16),
+      levels: readNumber("pixelLevels", DEFAULTS.levels, 2, 32),
       color: read("pixelColor") === "on",
       invert: read("pixelInvert") === "on",
       ink: currentInk(),
@@ -98,8 +101,8 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
     context.fillStyle = config.paper;
     context.fillRect(0, 0, width, height);
 
-    const dot = Math.max(2, Math.round(config.dot * scale));
-    const stepY = Math.max(2, dot * 0.866);
+    const dot = Math.max(1, Math.round(config.dot * scale));
+    const stepY = Math.max(1, dot * 0.866);
     const levels = Math.max(2, config.levels);
     const steps = levels - 1;
     const ink = config.ink;
@@ -110,8 +113,9 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
       const offset = row % 2 ? dot / 2 : 0;
       const top = Math.max(0, Math.floor(cy - stepY / 2));
       const bottom = Math.min(height, Math.ceil(cy + stepY / 2));
+      let column = 0;
 
-      for (let cx = offset + dot / 2; cx < width; cx += dot) {
+      for (let cx = offset + dot / 2; cx < width; cx += dot, column += 1) {
         const left = Math.max(0, Math.floor(cx - dot / 2));
         const right = Math.min(width, Math.ceil(cx + dot / 2));
         let r = 0, g = 0, b = 0, alpha = 0, count = 0;
@@ -139,6 +143,11 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
         // Ink amount is theme-aware: dark ink on light paper, light ink on dark paper.
         let amount = config.dark ? luminance : 1 - luminance;
         if (config.invert) amount = 1 - amount;
+        if (levels < 12) {
+          // Ordered dither: keeps more of the source gradient at 2-8 levels.
+          const dither = (BAYER[row & 3][column & 3] + 0.5) / 16;
+          amount = Math.min(1, Math.max(0, amount + (dither - 0.5) / steps));
+        }
         const step = Math.round(amount * steps) / steps;
         const radius = (dot / 2) * step;
         if (radius < 0.45) continue;
@@ -310,7 +319,7 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
     const rect = element.getBoundingClientRect();
     const displayScale = Math.max(1e-3, Math.max(rect.width / source.naturalWidth, rect.height / source.naturalHeight));
     // Keep the visible dot size near the selected one even on 2K/4K backgrounds.
-    const dot = Math.max(2, Math.min(32, config.dot / displayScale));
+    const dot = Math.max(1, Math.min(64, config.dot / displayScale));
 
     let output = null;
     try {
@@ -365,8 +374,10 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
       return;
     }
     scan();
+    // Drop the previous processed background first; otherwise processBackground
+    // sees its own data URL and thinks the new settings are already applied.
+    restoreBackground();
     if (config.background) scheduleBackground(0);
-    else restoreBackground();
   }
 
   /** Small sample for the settings panel: a gradient plus two shapes. */

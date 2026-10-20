@@ -3,7 +3,7 @@
  * handlers. Comment markers allow a full return to the native layout.
  * Labels are the design's own Chinese strings; L() looks up the design's
  * English table for other UI languages. */
-import { createExtensionSettings } from './official-extension-settings.js?v=2.0.158';
+import { createExtensionSettings } from './official-extension-settings.js?v=2.0.159';
 export function actionLabel(node,t){
   const byId={world_backfill_memos:['补全标题','Fill titles'],world_apply_current_sorting:['应用排序','Apply sorting'],world_refresh:['刷新','Refresh'],OpenAllWIEntries:['展开全部','Expand all'],CloseAllWIEntries:['收起全部','Collapse all'],world_popup_name_button:['改名','Rename'],world_duplicate:['复制','Duplicate'],world_popup_delete:['删除','Delete'],bulkEditButton:['批量编辑','Bulk edit'],charListGridToggle:['切换网格视图','Toggle grid view'],rm_button_group_chats:['新建群聊','New group'],external_import_button:['从外部导入','Import externally'],character_import_button:['导入角色','Import character'],world_import_button:['导入','Import'],world_popup_export:['导出','Export'],bg_add_folder_button:['新建文件夹','New folder'],bg_selection_mode_button:['选择背景','Select backgrounds'],bg_group_add_to_folder_button:['移入文件夹','Move to folder'],open_s_preset_menu:['预设工具','Preset tools'],view_connection_profile:['查看配置','View profile'],reload_connection_profile:['重新载入','Reload profile'],personas_backup:['备份','Back up'],personas_restore:['恢复备份','Restore backup'],persona_grid_toggle:['切换网格视图','Toggle grid view']};
   if(byId[node.id])return t(...byId[node.id]);
@@ -831,7 +831,49 @@ export function createDrawerLayouts({win,t,L,make,button,icon,openEditor,closeSe
       ui.opt(L('从文件导入'),false,click('character_import_button'));ui.opt(L('从网址导入'),false,click('external_import_button'));
     });
     fab.querySelector('summary').prepend(icon('plus'));fab.querySelector('summary').setAttribute('aria-label',L('新建'));page.append(fab);
-    move(s,get('rm_print_characters_pagination'),all);move(s,get('rm_print_characters_block'),all);finish(s);
+    move(s,get('rm_print_characters_pagination'),all);move(s,get('rm_print_characters_block'),all);
+    // CW pager: explicit 10/20/50 and prev/next. ST's own pagination stays in
+    // the DOM as the data/page engine but is hidden; the count change reprints
+    // through ST so the native plugin gets a valid pageSize (including 20).
+    const pager=make('div','cw-v4-char-pager'),sizeSelect=make('select','cw-v4-char-page-size');
+    for(const n of [10,20,50]){const opt=make('option','',t(`${n} / 页`,`${n} / page`));opt.value=String(n);sizeSelect.append(opt);}
+    sizeSelect.setAttribute('aria-label',t('每页角色数','Characters per page'));
+    const prevButton=make('button','cw-v4-pager-btn','‹'),nextButton=make('button','cw-v4-pager-btn','›');
+    prevButton.type='button';nextButton.type='button';prevButton.setAttribute('aria-label',t('上一页','Previous page'));nextButton.setAttribute('aria-label',t('下一页','Next page'));
+    const pageLabel=make('span','cw-v4-pager-label',''),pagerGroup=make('div','cw-v4-pager-group');
+    pagerGroup.append(prevButton,pageLabel,nextButton);pager.append(sizeSelect,pagerGroup);
+    all.insertBefore(pager,get('rm_print_characters_block'));s.created.push(pager);
+    let pagerTimer=0;
+    const pagerStorage=()=>win.SillyTavern?.getContext?.()?.accountStorage;
+    const cwPageKey='claude-web:charPageSize';
+    const readPagerSize=()=>{let n=0;try{n=Number(win.localStorage.getItem(cwPageKey));}catch{}return [10,20,50].includes(n)?n:10;};
+    const nativePager=()=>win.jQuery?.(get('rm_print_characters_pagination'));
+    const updatePager=()=>{
+      const $p=nativePager();let current=1,total=1;
+      try{current=Number($p?.pagination?.('getCurrentPageNum'))||1;total=Number($p?.pagination?.('getTotalPage'))||1;}catch{}
+      if(!Number.isFinite(current)||current<1)current=1;if(!Number.isFinite(total)||total<1)total=1;
+      pageLabel.textContent=t(`第 ${current} / ${total} 页`,`Page ${current} / ${total}`);
+      prevButton.disabled=current<=1;nextButton.disabled=current>=total;
+      const size=readPagerSize();if(sizeSelect.value!==String(size))sizeSelect.value=String(size);
+      const count=get('rm_print_characters_block')?.children.length||0;pager.hidden=!count;
+    };
+    const goPage=delta=>{const $p=nativePager();if(!$p?.length)return;let current=1;try{current=Number($p.pagination('getCurrentPageNum'))||1;}catch{}const target=current+delta;if(target<1)return;try{$p.pagination('go',target);}catch{}win.setTimeout(updatePager,80);};
+    const reprintCharacters=async value=>{
+      pagerStorage()?.setItem('Characters_PerPage',String(value));
+      try{const module=await import(new win.URL('/script.js',win.location.href).href);await module.printCharacters(true);}catch(error){console.warn('[Claude Web] 角色分页重绘失败',error);}
+      win.setTimeout(updatePager,120);
+    };
+    sizeSelect.addEventListener('change',async()=>{const value=Number(sizeSelect.value);try{win.localStorage.setItem(cwPageKey,String(value));}catch{}await reprintCharacters(value);});
+    prevButton.addEventListener('click',()=>goPage(-1));nextButton.addEventListener('click',()=>goPage(1));
+    const pagerObserver=new win.MutationObserver(()=>{win.clearTimeout(pagerTimer);pagerTimer=win.setTimeout(updatePager,40);});
+    const pagerBlock=get('rm_print_characters_block'),pagerNative=get('rm_print_characters_pagination');
+    if(pagerBlock)pagerObserver.observe(pagerBlock,{childList:true,subtree:true});
+    if(pagerNative)pagerObserver.observe(pagerNative,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+    cleanup(s,()=>{pagerObserver.disconnect();win.clearTimeout(pagerTimer);});
+    const initialSize=readPagerSize();sizeSelect.value=String(initialSize);
+    const pagerStore=pagerStorage(),nativeSize=Number(pagerStore?.getItem('Characters_PerPage'));
+    if(nativeSize!==initialSize){pagerStore?.setItem('Characters_PerPage',String(initialSize));void reprintCharacters(initialSize);}
+    updatePager();finish(s);
     // Keep the real form and its conditional wrappers, including create-only
     // name/submit controls. Editing an existing name still uses ST's Rename.
     const form=get('form_create'),adapted=form&&begin(form);if(adapted){

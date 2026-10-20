@@ -3,9 +3,9 @@
   "loading_order": 100,
   "requires": [],
   "optional": [],
-  "js": "loader-2.0.158.js",
+  "js": "loader-2.0.159.js",
   "author": "lulu / suyi1379-droid (fork)",
-  "version": "2.0.158",
+  "version": "2.0.159",
   "homePage": "https://github.com/suyi1379-droid/claude-web",
   "auto_update": true
 }

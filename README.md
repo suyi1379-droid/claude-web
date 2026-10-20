@@ -8,6 +8,12 @@
 >
 > 安装：在 SillyTavern 的「扩展 → Install extension」粘贴 `https://github.com/suyi1379-droid/claude-web`。
 
+## 2.0.159（suyi1379-droid fork）更新
+
+- 修复角色卡超过一屏后看不到的问题：角色列表改为页内滚动，不再被面板高度裁切。
+- 角色页新增分页条：每页 10 / 20 / 50 条，上一页 / 下一页和页码；选择会记住。
+- 仍使用酒馆原生分页数据，切换数量时通过酒馆重绘列表。
+
 ## 2.0.158（suyi1379-droid fork）更新
 
 - 图片像素画化改为 Folia 的 ImageDithering 方案：8×8 Bayer 抖动、像素块 + 色阶量化，替换原来的圆形半调网点。
@@ -348,4 +354,4 @@ SillyTavern/public/scripts/extensions/third-party/claude-web/
 
 ## 版本
 
-当前版本：`2.0.158`（suyi1379-droid fork）
+当前版本：`2.0.159`（suyi1379-droid fork）

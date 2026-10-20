@@ -1,5 +1,20 @@
 # Claude Web 2.0
 
+> **非官方修改版 / Unofficial fork**
+>
+> 本仓库是 [Claude Web 2.0](https://github.com/claudenoshujin/claude-web) 的修改版，原作者 **lulu**（GitHub：[@claudenoshujin](https://github.com/claudenoshujin)）。
+> 本仓库由 **suyi1379-droid** 维护，只加入了聊天样式、字号缩放和聊天宽度滑杆的修复；与原作者的 3.0 无关。
+> 原仓库没有附带 LICENSE，版权归原作者所有；本修改版不授予额外许可。详见 [NOTICE.md](NOTICE.md)。
+>
+> 安装：在 SillyTavern 的「扩展 → Install extension」粘贴 `https://github.com/suyi1379-droid/claude-web`。
+
+## 2.0.153（suyi1379-droid fork）更新
+
+- 修复“扁平 / 气泡 / 文档”三种聊天样式被主题 CSS 覆盖、切换后没有效果的问题。
+- 输入框字号接入酒馆“字体缩放”；手机正文不再重复乘一次缩放。
+- 酒馆“聊天宽度”滑杆映射到桌面消息列、输入框和标题列宽（55 为设计默认）。
+- 版本号升至 2.0.153，保留全部旧 loader。
+
 ## 2.0.147 更新
 
 - 修复缺少标准主题下拉框时，CW主题选项可能误插进接口来源或服务商列表的问题。清理旧版误插的所属选项，从合法保存值恢复显示；已保存为主题名时提示手动重选，不猜测原来源。
@@ -187,7 +202,7 @@ Claude Web 的稳定 2.0 版本，已经整理成可直接安装的 SillyTavern 
 3. 粘贴下面的仓库地址：
 
 ```text
-https://github.com/claudenoshujin/claude-web
+https://github.com/suyi1379-droid/claude-web
 ```
 
 4. 安装完成后刷新页面。
@@ -305,4 +320,4 @@ SillyTavern/public/scripts/extensions/third-party/claude-web/
 
 ## 版本
 
-当前版本：`2.0.8`
+当前版本：`2.0.153`（suyi1379-droid fork）

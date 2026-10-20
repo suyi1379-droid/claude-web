@@ -537,7 +537,7 @@ html[data-cw-v4] body #form_sheld #send_form #send_textarea::placeholder{text-al
   html[data-cw-v4] body #form_sheld #send_form #leftSendForm{display:flex!important;align-items:center!important;gap:6px!important}
   html[data-cw-v4] body #form_sheld #send_form #leftSendForm #extensionsMenuButton{order:0!important}
   html[data-cw-v4] body #form_sheld #send_form #leftSendForm #options_button{order:1!important}
-  html[data-cw-v4] body.clawd-welcome #send_textarea{text-align:left!important;font:400 15.5px/1.5 var(--cw-v4-font)!important;padding:8px 0!important}
+  html[data-cw-v4] body.clawd-welcome #send_textarea{text-align:left!important;font:400 15.5px/1.5 var(--cw-v4-font)!important;font-size:calc(15.5px * var(--fontScale, 1))!important;padding:8px 0!important}
   html[data-cw-v4] body:not(.claude-generation-active) #send_form #rightSendForm #send_but{display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 32px!important;width:32px!important;height:32px!important;min-width:32px!important;border-radius:50%!important;margin:0!important}
   html[data-cw-v4] body:not(.claude-generation-active):not(.cw-v4-filled) #send_form #rightSendForm #send_but{background:transparent!important;color:var(--cw-v4-text)!important}
   html[data-cw-v4] body:not(.claude-generation-active):not(.cw-v4-filled) #send_form #rightSendForm #send_but::before{background:currentColor!important;mask:var(--cw-v4-icon-voice) center/contain no-repeat!important;width:20px!important;height:20px!important}
@@ -3522,7 +3522,7 @@ html[data-cw-v4][data-claude-integrated-theme="night"] body #top-settings-holder
   html[data-cw-v4] body.clawd-welcome .clawd-welcome-hero{font-size:46px!important;font-weight:400!important;padding-top:48px!important}
   html[data-cw-v4] body.clawd-welcome .clawd-welcome-hero>.asterisk{width:40px!important;height:40px!important;min-width:40px!important}
   html[data-cw-v4] body.clawd-welcome #form_sheld #send_form#send_form{box-sizing:border-box!important;width:706px!important;max-width:calc(100vw - var(--cl-rail) - 48px)!important;min-height:115px!important;border-radius:18px!important;margin-left:calc((100vw - var(--cl-rail) - min(706px,100vw - var(--cl-rail) - 48px)) / 2)!important;margin-right:0!important}
-  html[data-cw-v4] body.clawd-welcome #form_sheld #send_form #send_textarea{font-size:16px!important}
+  html[data-cw-v4] body.clawd-welcome #form_sheld #send_form #send_textarea{font-size:calc(16px * var(--fontScale, 1))!important}
 }
 
 html[data-cw-v4] body #top-settings-holder#top-settings-holder#top-settings-holder .cw-v4-panel.cw-v4-panel.cw-v4-panel .cw-v4-leftovers>button.cw-v4-leftovers-row{appearance:none;display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;align-items:center;column-gap:16px;width:100%;margin:0;padding:12px 0 4px;border:0;border-top:1px solid var(--cw-v4-line,#ebeae6);background:none;color:var(--v4-text,#141413);text-align:left;cursor:pointer;font:inherit}
@@ -3742,3 +3742,78 @@ html[data-cw-v4][data-claude-layout="mobile"] body #top-settings-holder#top-sett
 
 html[data-cw-v4][data-claude-layout="pc"][data-cw-custom-width] body.clawd-welcome #form_sheld #send_form#send_form{width:var(--cw-user-column)!important;max-width:min(var(--cw-user-column),calc(100vw - var(--cl-rail) - 48px))!important;margin-left:calc((100vw - var(--cl-rail) - min(var(--cw-user-column),100vw - var(--cl-rail) - 48px)) / 2)!important}
 html[data-cw-v4] body #top-settings-holder#top-settings-holder>.drawer>.cw-v4-external-drawer>.cw-v4-external-head>button{border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;padding:0!important;color:var(--v4-text)!important}
+
+/* ── 聊天样式：扁平 / 气泡 / 文档 ─────────────────────────────────────
+   主题自带的 #chat .mes 用 !important 把气泡背景、边框、圆角和间距全部
+   清零，酒馆原生的 body.bubblechat / body.documentstyle 规则因此失效。
+   这里按 body 上的样式类恢复三套版式，优先级高于主题和 v4 布局规则。 */
+html:root body.bubblechat #chat > .mes {
+  width: fit-content !important;
+  max-width: min(100%, var(--cw-user-column, 826px)) !important;
+  box-sizing: border-box !important;
+  padding: 12px 14px !important;
+  margin: 0 0 8px !important;
+  border: 1px solid var(--cw-rule-hairline) !important;
+  border-radius: 14px !important;
+  background: var(--cw-surface-input) !important;
+}
+html:root body.bubblechat #chat > .mes[is_user="true"] {
+  margin-left: auto !important;
+  border: 1px solid var(--cw-rule-hairline) !important;
+  background: var(--cw-mark-field, color-mix(in srgb, #d97757 14%, var(--cw-surface-page))) !important;
+}
+html:root body.bubblechat #chat > .mes .mes_block {
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  align-items: flex-start !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+html:root body.bubblechat #chat > .mes .mes_text,
+html:root body.bubblechat #chat > .mes[is_user="true"] .mes_text {
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: none !important;
+}
+
+html:root body.documentstyle #chat > .mes {
+  width: 100% !important;
+  max-width: min(100%, var(--cw-user-column, 826px)) !important;
+  box-sizing: border-box !important;
+  padding: 5px 10px 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html:root body.documentstyle #chat > .mes[is_user="true"] {
+  flex-direction: row !important;
+}
+html:root body.documentstyle #chat > .mes .mes_block {
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  align-items: stretch !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+html:root body.documentstyle #chat > .mes .mes_text,
+html:root body.documentstyle #chat > .mes[is_user="true"] .mes_text {
+  margin-left: 20px !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: none !important;
+}
+html:root body.documentstyle #chat#chat > .mes .mesAvatarWrapper,
+html:root body.documentstyle #chat#chat > .mes .ch_name,
+html:root body.documentstyle #chat#chat > .mes :is(.cw-v4-message-info,.timestamp,.mes_timer,.tokenCounterDisplay,.mesIDDisplay) {
+  display: none !important;
+}

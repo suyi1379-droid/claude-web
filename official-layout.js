@@ -1,8 +1,8 @@
-import { installOfficialWeb } from './official-web.js?v=2.0.152';
-import { officialIcons } from './official-icons.js?v=2.0.152';
-import { createDrawerLayouts, actionLabel } from './official-drawers.js?v=2.0.152';
-import { tr } from './official-i18n.js?v=2.0.152';
-import { createTTPanelRuntime } from './official-tt-panel-runtime.js?v=2.0.152';
+import { installOfficialWeb } from './official-web.js?v=2.0.153';
+import { officialIcons } from './official-icons.js?v=2.0.153';
+import { createDrawerLayouts, actionLabel } from './official-drawers.js?v=2.0.153';
+import { tr } from './official-i18n.js?v=2.0.153';
+import { createTTPanelRuntime } from './official-tt-panel-runtime.js?v=2.0.153';
 /* Live adaptation of design-v4. Native drawers stay beneath their toggles:
  * ST resolves toggle.parent().find('.drawer-content'), and plugins delegate to
  * their original containers. Never import the preview's snapshots or fake data.
@@ -922,13 +922,16 @@ export function installOfficialLayout(win = window, { defaultChatWidth = 55 } = 
   disposers.push(()=>{for(const panel of externalDrawers.keys())clearExternalDrawer(panel);root.removeAttribute('data-cw-external-open');});
   let chatWidthKey="";
   function syncChatWidth() {
-    const value=Number(win.SillyTavern?.getContext?.().powerUserSettings?.chat_width);
+    const read=Number(win.SillyTavern?.getContext?.().powerUserSettings?.chat_width);
+    // 55 是 CLAUDE_THEMES 里的默认值，对应设计稿的 826px 消息列。
+    // 滑杆偏离默认值时按比例缩放，避免 55 → 56 这种 980px → 717px 的跳变。
+    const baseValue=Number(defaultChatWidth);const base=Number.isFinite(baseValue)&&baseValue>0?baseValue:55;
+    const value=Number.isFinite(read)&&read>0?Math.min(100,Math.max(25,read)):base;
+    const ratio=Math.max(.35,Math.min(2.4,value/base));
     const key=value+'|'+win.innerWidth+'|'+root.dataset.claudeLayout;
     if(key===chatWidthKey)return;chatWidthKey=key;
-    const custom=Number.isFinite(value)&&value>0&&value!==Number(defaultChatWidth);
-    // The existing desktop chat has 38px side gutters inside the rail boundary.
-    // Use one viewport-based cap so welcome, messages, composer and title agree.
-    const next=custom?'min(calc(100vw - var(--cl-rail, 0px) - 76px), max(360px, var(--sheldWidth)))':'';
+    const custom=Math.abs(ratio-1)>.001;
+    const next=custom?'calc(826px * '+ratio+')':'';
     if(root.style.getPropertyValue('--cw-user-column')!==next){if(next)root.style.setProperty('--cw-user-column',next);else root.style.removeProperty('--cw-user-column');}
     if(root.hasAttribute('data-cw-custom-width')!==custom)root.toggleAttribute('data-cw-custom-width',custom);
   }
@@ -1060,8 +1063,12 @@ export function installOfficialLayout(win = window, { defaultChatWidth = 55 } = 
     }
     // Typing only changes the filled state. syncChat() walks every assistant message and
     // reads layout, so it stays on the chat observer / schedule() path instead of every keystroke.
-    on(doc,'input', e => { if (e.target.id === 'chat_width_slider') win.requestAnimationFrame(syncChatWidth); if (e.target.id === 'send_textarea') setBodyClass('cw-v4-filled', Boolean(e.target.value.trim())); else if (e.target.type === 'range' && e.target.closest?.('.cw-v4-panel,.cw-v4-editor')) fill(e.target); });
-    on(doc,'change', e => { if (e.target.id === 'ui_language_select') schedule(); });
+    // 滑杆的 input 监听器可能比酒馆自己的处理器更早读到旧值；放到事件结束后再同步。
+    const syncChatWidthSoon=()=>win.setTimeout(syncChatWidth,0);
+    on(doc,'input', e => { if (e.target.id === 'chat_width_slider' || e.target.id === 'chat_width_slider_counter') syncChatWidthSoon(); if (e.target.id === 'send_textarea') setBodyClass('cw-v4-filled', Boolean(e.target.value.trim())); else if (e.target.type === 'range' && e.target.closest?.('.cw-v4-panel,.cw-v4-editor')) fill(e.target); });
+    on(doc,'change', e => { if (e.target.id === 'chat_width_slider' || e.target.id === 'chat_width_slider_counter') syncChatWidthSoon(); if (e.target.id === 'ui_language_select') schedule(); });
+    on(doc,'mouseup', e => { if (e.target.id === 'chat_width_slider') syncChatWidthSoon(); });
+    on(doc,'touchend', e => { if (e.target.id === 'chat_width_slider') syncChatWidthSoon(); }, {passive:true});
     // Switching pages from the Claude sidebar: SillyTavern closes the open drawer, waits animation_duration, then
     // opens the new one, so for that wait the old page shows half-closed over the sidebar. Close it synchronously
     // first (same as activate()), so SillyTavern opens the new page in the same click.

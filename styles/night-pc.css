@@ -1546,7 +1546,7 @@ body.clawd-interactive-ready #chat > .mes[is_user="false"] > .swipeRightBlock {
   color:var(--cw-text-body) !important;
   font-family:var(--cl-font-reading) !important;
   
-  font-size:calc(.98em * var(--fontScale, 1)) !important;
+  font-size:.98em !important;
   line-height:1.65 !important;
 }
 #chat > .mes[type="assistant_message"] .mes_text :is(button,.menu_button) {
@@ -2046,7 +2046,7 @@ html body #send_textarea {
   padding:10px 6px 8px !important;
   border-top-width:2px !important;
   resize:none !important;
-  font-size:16px !important;
+  font-size:calc(16px * var(--fontScale, 1)) !important;
   line-height:1.4 !important;
   box-sizing:border-box !important;
 }
@@ -2174,7 +2174,7 @@ html:not([data-claude-archive="on"]) body #chat > .mes:has(.edit_textarea) .mes_
 
 @supports (-webkit-touch-callout: none) {
   @media (max-width:700px) {
-    html body #send_textarea { font-size:16px !important; }
+    html body #send_textarea { font-size:calc(16px * var(--fontScale, 1)) !important; }
   }
 }
 :is(button,.mes_button,.menu_button,.drawer-icon,a,select,.inline-drawer-toggle):focus-visible {
@@ -2747,7 +2747,7 @@ html body #form_sheld {
 
   html body #send_textarea {
     
-    font-size:16px !important;
+    font-size:calc(16px * var(--fontScale, 1)) !important;
     line-height:1.4 !important;
   }
 }
@@ -2841,7 +2841,7 @@ button.clawd-signoff-button { transition:transform 240ms cubic-bezier(.34,1.6,.6
 
 
 @media (min-width:701px) {
-  html body #send_textarea { font-size:15px !important; }
+  html body #send_textarea { font-size:calc(15px * var(--fontScale, 1)) !important; }
 }
 
 
@@ -3753,7 +3753,7 @@ html body.clawd-welcome #send_form > :not(#nonQRFormItems) { display:none !impor
     min-height:50px !important;
     margin:0 !important;
     padding:7px !important;
-    font-size:16px !important;
+    font-size:calc(16px * var(--fontScale, 1)) !important;
     text-align:left !important;
     background:transparent !important;
   }

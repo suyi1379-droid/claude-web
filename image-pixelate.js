@@ -1,18 +1,28 @@
-/* Chat-image halftone / pixelation.
-   Inspired by Folia's Nomand "halftone-dots" effect: dot size, tonal levels,
-   original colours, inverted luminance and an ink colour. Folia drives a
-   Paper shader; this is a small Canvas port so Claude Web can stay build-free.
+/* Chat-image dithering / pixelation.
+   Port of Folia's Nomand ImageDithering effect: 8x8 Bayer pixel blocks, a
+   configurable number of color steps, original colours, inverted luminance and
+   a dark-paper / light-ink palette. Folia drives a Paper shader; this is a
+   small Canvas port so Claude Web can stay build-free.
 
-   Only `.mes_img` inside `#chat` is touched. Avatars, icons and backgrounds
-   are deliberately left alone. The original src is kept per image and restored
-   when the effect is switched off or the extension is destroyed. */
+   Only `.mes_img` inside `#chat` and the selected `#bg1` background are
+   touched. Avatars, icons and extension UI are left alone. The original src is
+   kept per image and restored when the effect is switched off or the extension
+   is destroyed. */
 
-const DEFAULTS = Object.freeze({ dot: 4, levels: 8, ink: "#1f1f1e" });
+const DEFAULTS = Object.freeze({ dot: 3, levels: 4, ink: "#f8f8f6" });
 const MAX_SIDE = 2560;
 const CACHE_LIMIT = 6;
-// 4x4 Bayer matrix: breaks up banding at low level counts without changing the
-// selected number of tones. Disabled once the level count is already fine.
-const BAYER = [ [ 0, 8, 2, 10 ], [ 12, 4, 14, 6 ], [ 3, 11, 1, 9 ], [ 15, 7, 13, 5 ] ];
+// Folia's ImageDithering "8x8" Bayer matrix.
+const BAYER8 = [
+  [ 0, 32, 8, 40, 2, 34, 10, 42 ],
+  [ 48, 16, 56, 24, 50, 18, 58, 26 ],
+  [ 12, 44, 4, 36, 14, 46, 6, 38 ],
+  [ 60, 28, 52, 20, 62, 30, 54, 22 ],
+  [ 3, 35, 11, 43, 1, 33, 9, 41 ],
+  [ 51, 19, 59, 27, 49, 17, 57, 25 ],
+  [ 15, 47, 7, 39, 13, 45, 5, 37 ],
+  [ 63, 31, 55, 23, 61, 29, 53, 21 ],
+];
 
 export function installImagePixelate({ win = window, doc = document } = {}) {
   if (win.__claudeImagePixelate) return win.__claudeImagePixelate;
@@ -28,17 +38,19 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
     return Number.isFinite(value) ? clamp(Math.round(value), min, max) : fallback;
   };
 
-  const currentInk = () => {
+  const currentInk = darkPaper => {
     const stored = read("pixelInk");
     if (/^#[0-9a-f]{6}$/i.test(stored || "")) return stored;
-    // "默认墨色" follows the theme's ink, so day uses dark ink and night light ink.
+    // The Folia reference is a dark print: dark paper, light ink. Turning the
+    // dark-paper switch off falls back to the theme's ink on the theme surface.
+    if (darkPaper) return "#f8f8f6";
     const themed = win.getComputedStyle(doc.documentElement).getPropertyValue("--cl-ink").trim();
-    return /^#[0-9a-f]{6}$/i.test(themed) ? themed : DEFAULTS.ink;
+    return /^#[0-9a-f]{6}$/i.test(themed) ? themed : "#1f1f1e";
   };
 
   const settings = () => {
     const css = win.getComputedStyle(doc.documentElement);
-    const dark = css.getPropertyValue("--cl-color-scheme").trim() === "dark";
+    const darkPaper = read("pixelDarkPaper") !== "off";
     return {
       enabled: read("pixelate") === "on",
       // Background processing defaults on; an explicit "off" disables it.
@@ -48,11 +60,17 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
       color: read("pixelColor") === "on",
       invert: read("pixelInvert") === "on",
       brightness: readNumber("pixelBrightness", 0, -100, 100),
-      ink: currentInk(),
-      // Like Folia's colorBack: light paper gets dark ink, dark paper gets light ink.
-      paper: css.getPropertyValue("--cw-surface-page").trim() || (dark ? "#1f1f1e" : "#fbfbfa"),
-      dark,
+      darkPaper,
+      paper: darkPaper ? "#1f1f1e" : (css.getPropertyValue("--cw-surface-page").trim() || "#fbfbfa"),
+      ink: currentInk(darkPaper),
     };
+  };
+
+  const parseHex = value => {
+    const match = /^#([0-9a-f]{6})$/i.exec(String(value || "").trim());
+    if (!match) return null;
+    const number = parseInt(match[1], 16);
+    return [ number >> 16 & 255, number >> 8 & 255, number & 255 ];
   };
 
   let destroyed = false;
@@ -71,9 +89,10 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
   let backgroundResize = null;
 
   /**
-   * Draw an image as a grid of ink dots. `target` is reused for the settings
-   * preview; chat images get a fresh canvas. Dark cells produce large dots,
-   * light cells produce none, which is the usual halftone reading.
+   * Folia-style ordered dithering. Each `dot`-pixel block samples the source,
+   * applies the 8x8 Bayer threshold and the selected colour steps, then fills
+   * the block with the palette (or the cell colour). The output is opaque:
+   * dark areas take the paper colour, bright areas the ink colour.
    */
   function render(source, sourceWidth, sourceHeight, config, target) {
     const scale = Math.min(1, MAX_SIDE / Math.max(1, sourceWidth, sourceHeight));
@@ -99,32 +118,25 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
     output.width = width;
     output.height = height;
     const context = output.getContext("2d");
-    context.fillStyle = config.paper;
-    context.fillRect(0, 0, width, height);
-
-    const dot = Math.max(1, Math.round(config.dot * scale));
-    const stepY = Math.max(1, dot * 0.866);
-    const levels = Math.max(2, config.levels);
-    const steps = levels - 1;
-    const ink = config.ink;
-    const rows = Math.ceil(height / stepY);
+    const block = Math.max(1, Math.round(config.dot * scale));
+    const steps = Math.max(1, Math.max(2, config.levels) - 1);
+    const paper = parseHex(config.paper) || [ 251, 251, 250 ];
+    const ink = parseHex(config.ink) || [ 248, 248, 246 ];
+    const rows = Math.ceil(height / block);
+    const cols = Math.ceil(width / block);
 
     for (let row = 0; row < rows; row += 1) {
-      const cy = row * stepY + stepY / 2;
-      const offset = row % 2 ? dot / 2 : 0;
-      const top = Math.max(0, Math.floor(cy - stepY / 2));
-      const bottom = Math.min(height, Math.ceil(cy + stepY / 2));
-      let column = 0;
-
-      for (let cx = offset + dot / 2; cx < width; cx += dot, column += 1) {
-        const left = Math.max(0, Math.floor(cx - dot / 2));
-        const right = Math.min(width, Math.ceil(cx + dot / 2));
+      const y0 = row * block;
+      const y1 = Math.min(height, y0 + block);
+      for (let col = 0; col < cols; col += 1) {
+        const x0 = col * block;
+        const x1 = Math.min(width, x0 + block);
         let r = 0, g = 0, b = 0, alpha = 0, count = 0;
 
-        for (let yy = top; yy < bottom; yy += 1) {
-          const pixelRow = yy * width;
-          for (let xx = left; xx < right; xx += 1) {
-            const index = (pixelRow + xx) * 4;
+        for (let y = y0; y < y1; y += 1) {
+          const pixelRow = y * width;
+          for (let x = x0; x < x1; x += 1) {
+            const index = (pixelRow + x) * 4;
             const a = pixels[index + 3] / 255;
             r += pixels[index] * a;
             g += pixels[index + 1] * a;
@@ -135,44 +147,32 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
         }
 
         const coverage = count ? alpha / count : 0;
-        if (coverage <= 0.02) continue;
+        const red = alpha > 0 ? r / alpha : 0;
+        const green = alpha > 0 ? g / alpha : 0;
+        const blue = alpha > 0 ? b / alpha : 0;
+        let lum = (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255;
+        if (config.invert) lum = 1 - lum;
+        if (config.brightness) lum = Math.min(1, Math.max(0, lum + config.brightness / 200));
 
-        const red = r / alpha;
-        const green = g / alpha;
-        const blue = b / alpha;
-        const luminance = (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255;
-        // Ink amount is theme-aware: dark ink on light paper, light ink on dark paper.
-        let amount = config.dark ? luminance : 1 - luminance;
-        if (config.invert) amount = 1 - amount;
-        if (config.brightness) {
-          // Positive brightens the final print: less ink on light paper, more
-          // light ink on dark paper. Negative does the opposite.
-          amount += (config.dark ? config.brightness : -config.brightness) / 200;
-          amount = Math.min(1, Math.max(0, amount));
-        }
-        if (levels < 12) {
-          // Ordered dither: keeps more of the source gradient at 2-8 levels.
-          const dither = (BAYER[row & 3][column & 3] + 0.5) / 16;
-          amount = Math.min(1, Math.max(0, amount + (dither - 0.5) / steps));
-        }
-        const step = Math.round(amount * steps) / steps;
-        const radius = (dot / 2) * step;
-        if (radius < 0.45) continue;
+        const bayer = (BAYER8[row & 7][col & 7] + 0.5) / 64;
+        const tone = Math.min(1, Math.max(0, lum + (bayer - 0.5) / steps));
+        const quant = Math.round(tone * steps) / steps;
+        // Dark paper: bright cells become ink. Light paper: bright cells stay paper.
+        const amount = (config.darkPaper ? quant : 1 - quant) * coverage;
 
-        context.beginPath();
-        context.arc(cx, cy, Math.min(dot / 2, radius), 0, Math.PI * 2);
-        context.fillStyle = config.color
-          ? `rgba(${Math.round(red)},${Math.round(green)},${Math.round(blue)},${coverage})`
-          : ink;
-        context.fill();
+        const rOut = config.color ? paper[0] + (red - paper[0]) * amount : paper[0] + (ink[0] - paper[0]) * amount;
+        const gOut = config.color ? paper[1] + (green - paper[1]) * amount : paper[1] + (ink[1] - paper[1]) * amount;
+        const bOut = config.color ? paper[2] + (blue - paper[2]) * amount : paper[2] + (ink[2] - paper[2]) * amount;
+        context.fillStyle = `rgb(${Math.round(rOut)},${Math.round(gOut)},${Math.round(bOut)})`;
+        context.fillRect(x0, y0, block, block);
       }
     }
 
     return output;
   }
 
-  function keyFor(source, config) {
-    return [source, config.dot, config.levels, config.color ? 1 : 0, config.invert ? 1 : 0, config.brightness, config.ink, config.paper, config.dark ? 1 : 0].join("|");
+  function keyFor(source, config, displayWidth = 0) {
+    return [source, config.dot, config.levels, config.color ? 1 : 0, config.invert ? 1 : 0, config.brightness, config.ink, config.paper, config.darkPaper ? 1 : 0, displayWidth].join("|");
   }
 
   function isChatImage(node) {
@@ -219,12 +219,14 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
       return;
     }
 
-    const key = keyFor(source, config);
+    const displayWidth = image.clientWidth || image.naturalWidth || 1;
+    const dot = Math.max(1, Math.min(64, config.dot * image.naturalWidth / displayWidth));
+    const key = keyFor(source, config, displayWidth);
     let processed = cache.get(key);
     if (!processed) {
       let output = null;
       try {
-        output = render(image, image.naturalWidth, image.naturalHeight, config);
+        output = render(image, image.naturalWidth, image.naturalHeight, { ...config, dot });
       } catch {
         output = null;
       }
@@ -324,13 +326,37 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
     if (backgroundUrl(backgroundValue(element)) !== url) return;
 
     const rect = element.getBoundingClientRect();
-    const displayScale = Math.max(1e-3, Math.max(rect.width / source.naturalWidth, rect.height / source.naturalHeight));
-    // Keep the visible dot size near the selected one even on 2K/4K backgrounds.
-    const dot = Math.max(1, Math.min(64, config.dot / displayScale));
+    if (rect.width < 2 || rect.height < 2) return;
+    const dpr = Math.min(2, win.devicePixelRatio || 1);
+    const displayWidth = Math.max(1, Math.round(rect.width * dpr));
+    const displayHeight = Math.max(1, Math.round(rect.height * dpr));
+    const prepared = doc.createElement("canvas");
+    prepared.width = displayWidth;
+    prepared.height = displayHeight;
+    const preparedContext = prepared.getContext("2d");
+    const cover = Math.max(displayWidth / source.naturalWidth, displayHeight / source.naturalHeight);
+    const drawWidth = source.naturalWidth * cover;
+    const drawHeight = source.naturalHeight * cover;
+    const position = win.getComputedStyle(element).backgroundPosition || "0% 0%";
+    const parts = position.split(/\s+/);
+    const percentage = value => {
+      if (value === "center") return 0.5;
+      if (value === "right" || value === "bottom") return 1;
+      const number = parseFloat(value);
+      return Number.isFinite(number) ? number / 100 : 0;
+    };
+    preparedContext.drawImage(
+      source,
+      (displayWidth - drawWidth) * percentage(parts[0]),
+      (displayHeight - drawHeight) * percentage(parts[1] || "0%"),
+      drawWidth,
+      drawHeight,
+    );
 
     let output = null;
     try {
-      output = render(source, source.naturalWidth, source.naturalHeight, { ...config, dot });
+      // One dither block per `dot` CSS pixels; dpr keeps the pattern crisp on retina.
+      output = render(prepared, displayWidth, displayHeight, { ...config, dot: Math.max(1, Math.round(config.dot * dpr)) });
     } catch {
       output = null;
     }

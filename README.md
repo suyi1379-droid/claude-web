@@ -8,6 +8,13 @@
 >
 > 安装：在 SillyTavern 的「扩展 → Install extension」粘贴 `https://github.com/suyi1379-droid/claude-web`。
 
+## 2.0.158（suyi1379-droid fork）更新
+
+- 图片像素画化改为 Folia 的 ImageDithering 方案：8×8 Bayer 抖动、像素块 + 色阶量化，替换原来的圆形半调网点。
+- 新增“深色底（浅色点）”（默认开启），暗底浅点更接近 Folia 的参考观感；关闭则浅底深点。
+- 默认改为 3px / 4 阶 / 明暗 0；背景按实际显示尺寸（含 DPR）处理，网点更清晰。
+- 明暗度、保留原色、反转、墨色、背景处理全部保留。
+
 ## 2.0.157（suyi1379-droid fork）更新
 
 - 图片像素画化新增“明暗度”调节（-100～+100）：负值压暗、正值提亮，同时作用于聊天图片和背景，适合修正高光过多的图片。
@@ -341,4 +348,4 @@ SillyTavern/public/scripts/extensions/third-party/claude-web/
 
 ## 版本
 
-当前版本：`2.0.157`（suyi1379-droid fork）
+当前版本：`2.0.158`（suyi1379-droid fork）

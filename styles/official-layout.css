@@ -3761,7 +3761,7 @@ html:root body.bubblechat #chat > .mes {
 html:root body.bubblechat #chat > .mes[is_user="true"] {
   margin-left: auto !important;
   border: 1px solid var(--cw-rule-hairline) !important;
-  background: color-mix(in srgb, var(--cw-mark-field, #d97757) 76%, transparent) !important;
+  background: color-mix(in srgb, var(--cw-surface-hover, #333230) 72%, transparent) !important;
 }
 html:root body.bubblechat #chat > .mes .mes_block {
   width: auto !important;
@@ -3779,6 +3779,9 @@ html:root body.bubblechat #chat > .mes[is_user="true"] .mes_text {
   padding: 0 !important;
   border-radius: 0 !important;
   background: none !important;
+}
+html:root body.bubblechat #chat > .mes :is(.mes_buttons,.claude-user-message-actions) {
+  margin-top: 10px !important;
 }
 
 html:root body.documentstyle #chat > .mes {

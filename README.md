@@ -8,6 +8,11 @@
 >
 > 安装：在 SillyTavern 的「扩展 → Install extension」粘贴 `https://github.com/suyi1379-droid/claude-web`。
 
+## 2.0.162（suyi1379-droid fork）更新
+
+- 气泡模式下编辑/操作按钮与正文的间距增加（10px），按钮不再贴住文字。
+- 气泡模式的用户消息改为主题灰（surface-hover）72% 半透明，与角色气泡区分。
+
 ## 2.0.161（suyi1379-droid fork）更新
 
 - 补齐文档模式用户消息的半透明卡片（50%），与角色消息保持一致。
@@ -364,4 +369,4 @@ SillyTavern/public/scripts/extensions/third-party/claude-web/
 
 ## 版本
 
-当前版本：`2.0.161`（suyi1379-droid fork）
+当前版本：`2.0.162`（suyi1379-droid fork）

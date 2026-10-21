@@ -8,6 +8,16 @@
 >
 > 安装：在 SillyTavern 的「扩展 → Install extension」粘贴 `https://github.com/suyi1379-droid/claude-web`。
 
+## 2.0.161（suyi1379-droid fork）更新
+
+- 补齐文档模式用户消息的半透明卡片（50%），与角色消息保持一致。
+
+## 2.0.160（suyi1379-droid fork）更新
+
+- 气泡与文档消息卡片改为半透明（气泡约 76%、文档约 50%），保留边框与排版，能透出背景图；没有加 backdrop-filter，避免额外合成开销。
+- 移除“界面样式（新版 / 旧版）”选项和旧版页面分支，始终使用新版官方布局；启动时清理旧的 `claude-web:ui-style`。
+- 性能清理：背景像素化不再监听根节点的 class/style（只监听 #bg1 与窗口尺寸）；角色分页只监听列表直接子节点。
+
 ## 2.0.159（suyi1379-droid fork）更新
 
 - 修复角色卡超过一屏后看不到的问题：角色列表改为页内滚动，不再被面板高度裁切。
@@ -354,4 +364,4 @@ SillyTavern/public/scripts/extensions/third-party/claude-web/
 
 ## 版本
 
-当前版本：`2.0.159`（suyi1379-droid fork）
+当前版本：`2.0.161`（suyi1379-droid fork）

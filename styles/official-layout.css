@@ -3756,12 +3756,12 @@ html:root body.bubblechat #chat > .mes {
   margin: 0 0 8px !important;
   border: 1px solid var(--cw-rule-hairline) !important;
   border-radius: 14px !important;
-  background: var(--cw-surface-input) !important;
+  background: color-mix(in srgb, var(--cw-surface-input) 76%, transparent) !important;
 }
 html:root body.bubblechat #chat > .mes[is_user="true"] {
   margin-left: auto !important;
   border: 1px solid var(--cw-rule-hairline) !important;
-  background: var(--cw-mark-field, color-mix(in srgb, #d97757 14%, var(--cw-surface-page))) !important;
+  background: color-mix(in srgb, var(--cw-mark-field, #d97757) 76%, transparent) !important;
 }
 html:root body.bubblechat #chat > .mes .mes_block {
   width: auto !important;
@@ -3785,15 +3785,18 @@ html:root body.documentstyle #chat > .mes {
   width: 100% !important;
   max-width: min(100%, var(--cw-user-column, 826px)) !important;
   box-sizing: border-box !important;
-  padding: 5px 10px 0 !important;
-  margin: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
+  padding: 9px 12px !important;
+  margin: 0 0 7px !important;
+  border: 1px solid color-mix(in srgb, var(--cw-rule-hairline) 70%, transparent) !important;
+  border-radius: 12px !important;
+  background: color-mix(in srgb, var(--cw-surface-input) 50%, transparent) !important;
   box-shadow: none !important;
 }
 html:root body.documentstyle #chat > .mes[is_user="true"] {
   flex-direction: row !important;
+  background: color-mix(in srgb, var(--cw-surface-input) 50%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--cw-rule-hairline) 70%, transparent) !important;
+  border-radius: 12px !important;
 }
 html:root body.documentstyle #chat > .mes .mes_block {
   width: auto !important;

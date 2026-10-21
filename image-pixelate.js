@@ -83,7 +83,6 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
   let backgroundState = null;
   let backgroundElement = null;
   let backgroundObserver = null;
-  let backgroundHostObserver = null;
   let backgroundTimer = 0;
   let backgroundToken = 0;
   let backgroundResize = null;
@@ -446,9 +445,6 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
     findBackground();
     if (settings().enabled && settings().background) scheduleBackground(0);
 
-    // Theme / CSS-variable changes can move the background URL without touching #bg1.
-    backgroundHostObserver = new win.MutationObserver(() => scheduleBackground(250));
-    backgroundHostObserver.observe(doc.documentElement, { attributes: true, attributeFilter: [ "class", "style" ] });
 
     let lastWidth = win.innerWidth;
     backgroundResize = () => {
@@ -504,8 +500,6 @@ export function installImagePixelate({ win = window, doc = document } = {}) {
       restoreBackground();
       backgroundObserver?.disconnect();
       backgroundObserver = null;
-      backgroundHostObserver?.disconnect();
-      backgroundHostObserver = null;
       win.clearTimeout(backgroundTimer);
       backgroundTimer = 0;
       if (backgroundResize) {

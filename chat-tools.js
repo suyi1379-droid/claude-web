@@ -1,4 +1,4 @@
-import { CHAT_TOOLS_CSS } from './chat-tools-style.js?v=2.0.159';
+import { CHAT_TOOLS_CSS } from './chat-tools-style.js?v=2.0.161';
 
 const bare = f => String(f ?? '').replace(/\.jsonl$/i, '');
 export const chatRecordKey = r => JSON.stringify([r.group ? 'group' : 'character', String(r.group || r.avatar || ''), bare(r.file_name ?? r.file)]);
@@ -25,7 +25,7 @@ function installReadyChatTools({win, doc, getContext, enabled, follow, onFavorit
   const storageKey=kind=>'claude-web:chat-tools:'+getCurrentUserHandle()+':'+kind;
   const write=(kind,value)=>{try{win.localStorage.setItem(storageKey(kind),JSON.stringify(value));return true}catch{toast('无法保存，浏览器本地存储不可用或已满。','error');return false}};
   const on=()=>!destroyed&&enabled()&&win.localStorage.getItem('claude-web:chat-tools')!=='off';
-  const visual=()=>on()&&root.hasAttribute('data-cw-v4')&&root.dataset.claudeUi!=='classic';
+  const visual=()=>on()&&root.hasAttribute('data-cw-v4');
   const toast=(text,type='info')=>win.toastr?.[type]?.(text);
   const later=(fn,ms)=>{const id=win.setTimeout(()=>{timers.delete(id);if(!destroyed)fn()},ms);timers.add(id);return id};
   const cancel=id=>{win.clearTimeout(id);timers.delete(id)};

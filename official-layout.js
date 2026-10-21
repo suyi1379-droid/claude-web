@@ -1,8 +1,8 @@
-import { installOfficialWeb } from './official-web.js?v=2.0.159';
-import { officialIcons } from './official-icons.js?v=2.0.159';
-import { createDrawerLayouts, actionLabel } from './official-drawers.js?v=2.0.159';
-import { tr } from './official-i18n.js?v=2.0.159';
-import { createTTPanelRuntime } from './official-tt-panel-runtime.js?v=2.0.159';
+import { installOfficialWeb } from './official-web.js?v=2.0.161';
+import { officialIcons } from './official-icons.js?v=2.0.161';
+import { createDrawerLayouts, actionLabel } from './official-drawers.js?v=2.0.161';
+import { tr } from './official-i18n.js?v=2.0.161';
+import { createTTPanelRuntime } from './official-tt-panel-runtime.js?v=2.0.161';
 /* Live adaptation of design-v4. Native drawers stay beneath their toggles:
  * ST resolves toggle.parent().find('.drawer-content'), and plugins delegate to
  * their original containers. Never import the preview's snapshots or fake data.
@@ -25,7 +25,7 @@ export function installOfficialLayout(win = window, { defaultChatWidth = 55 } = 
   const iconProperties = Object.keys(officialIcons).map(name => { const key = '--cw-v4-icon-' + name; return [key, root.style.getPropertyValue(key), root.style.getPropertyPriority(key)]; });
   for (const [name,path] of Object.entries(officialIcons)) root.style.setProperty('--cw-v4-icon-'+name,`url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`)}")`);
   const installedIconValues = new Map(iconProperties.map(([key]) => [key, root.style.getPropertyValue(key)]));
-  const enabled = () => !destroyed && root.dataset.claudeEnabled !== 'off' && root.dataset.claudeStructure === 'rail' && root.dataset.claudeSkin === 'classic' && root.dataset.claudeUi !== 'classic';
+  const enabled = () => !destroyed && root.dataset.claudeEnabled !== 'off' && root.dataset.claudeStructure === 'rail' && root.dataset.claudeSkin === 'classic';
   // The mobile skin can also run in a wide desktop window. Match the CSS
   // breakpoint rather than treating the skin preference as viewport size.
   // Phones use the phone layout at any width (the stylesheets are pinned the
@@ -1053,7 +1053,7 @@ export function installOfficialLayout(win = window, { defaultChatWidth = 55 } = 
       disposers.push(()=>{for(const mo of drawerWatchers.values())mo.disconnect();drawerWatchers.clear();});
     }
     sync();
-    observe(root, schedule, {attributes:true,attributeFilter:['data-claude-structure','data-claude-skin','data-claude-ui']});
+    observe(root, schedule, {attributes:true,attributeFilter:['data-claude-structure','data-claude-skin']});
     observe(doc.body, schedule, {attributes:true,attributeFilter:['class','data-clawd-menu']});
     const chat = doc.getElementById('chat'); if (chat) observe(chat, markRubyChanges, {childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['class','style']});
     if (chat && win.ResizeObserver) {

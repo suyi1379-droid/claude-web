@@ -8,6 +8,11 @@
 >
 > 安装：在 SillyTavern 的「扩展 → Install extension」粘贴 `https://github.com/suyi1379-droid/claude-web`。
 
+## 2.0.163（suyi1379-droid fork）更新
+
+- 修正气泡模式助手消息的操作按钮定位：按钮改为落在正文下方的操作栏，与正文保留约 12px 间距，不再压在最后一行文字上。
+- 用户消息的操作条间距同步增至 12px。
+
 ## 2.0.162（suyi1379-droid fork）更新
 
 - 气泡模式下编辑/操作按钮与正文的间距增加（10px），按钮不再贴住文字。
@@ -369,4 +374,4 @@ SillyTavern/public/scripts/extensions/third-party/claude-web/
 
 ## 版本
 
-当前版本：`2.0.162`（suyi1379-droid fork）
+当前版本：`2.0.163`（suyi1379-droid fork）
